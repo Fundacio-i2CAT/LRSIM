@@ -1,0 +1,4 @@
+.venv
+*.pyc
+data_to_match
+figures_help_test_understanding
