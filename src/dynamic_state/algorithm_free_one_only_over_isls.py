@@ -43,7 +43,6 @@ def algorithm_free_one_only_over_isls(
     # Removed sat_neighbor_to_if - derivable from topology_with_isls.sat_neighbor_to_if
     list_gsl_interfaces_info: list,  # Info about bandwidth per node/interface
     prev_output: dict | None,  # Contains previous state: {'fstate': {...}, 'bandwidth': {...}}
-    enable_verbose_logs: bool,  # Keep for logging control
 ) -> dict:  # Return the new state object
     """
     Refactored: FREE-ONE ONLY OVER INTER-SATELLITE LINKS ALGORITHM

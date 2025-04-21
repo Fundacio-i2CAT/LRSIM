@@ -329,34 +329,23 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         """Test the main loop calls generate_dynamic_state_at correctly."""
         output_dir = "/fake/loop/dir"
 
-        # Define time parameters as INTEGERS
-        simulation_end_time_ns = 3 * 1_000_000_000  # Use underscores or just 3000000000
-        time_step_ns = 1 * 1_000_000_000  # Use underscores or just 1000000000
-        offset_ns = 1 * 1_000_000_000  # Use underscores or just 1000000000
-        # Alternatively:
-        # simulation_end_time_ns = int(3e9)
-        # time_step_ns = int(1e9)
-        # offset_ns = int(1e9)
-
+        simulation_end_time_ns = 3 * 1_000_000_000
+        time_step_ns = 1 * 1_000_000_000
+        offset_ns = 1 * 1_000_000_000
         algo_name = "algorithm_free_one_only_over_isls"
-        enable_verbose_logs = False
         mock_generate_at.side_effect = ["output_t1", "output_t2"]
 
-        # This call might produce log output (e.g., the progress print)
         generate_dynamic_state.generate_dynamic_state(
             output_dir,
             self.mock_astropy_epoch,
-            simulation_end_time_ns,  # Pass int
-            time_step_ns,  # Pass int
-            offset_ns,  # Pass int
+            simulation_end_time_ns,
+            time_step_ns,
+            offset_ns,
             self.constellation_data,
             self.ground_stations,
             self.undirected_isls,
             self.list_gsl_interfaces_info,
-            self.max_gsl_m,
-            self.max_isl_m,
             algo_name,
-            enable_verbose_logs,
         )
 
         # Assertions use the integer times now
@@ -393,16 +382,16 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
             generate_dynamic_state.generate_dynamic_state(
                 "/fake",
                 self.mock_astropy_epoch,
-                1000,
-                100,
-                50,
+                1000,  # end time (int)
+                100,  # step (int)
+                50,  # offset (int, invalid)
                 self.constellation_data,
                 self.ground_stations,
                 self.undirected_isls,
                 self.list_gsl_interfaces_info,
-                self.max_gsl_m,
-                self.max_isl_m,
-                "algorithm_free_one_only_over_isls",
-                False,
+                # self.max_gsl_m,         # REMOVE THIS ARGUMENT
+                # self.max_isl_m,         # REMOVE THIS ARGUMENT
+                "algorithm_free_one_only_over_isls",  # algo name
+                # False,                  # REMOVE THIS ARGUMENT (enable_verbose_logs)
             )
         self.assertIn("Offset must be a multiple of time_step_ns", str(cm.exception))

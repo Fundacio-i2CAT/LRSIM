@@ -21,50 +21,100 @@
 # SOFTWARE.
 
 import math
-
 import ephem
-from geopy.distance import great_circle
+from geopy.distance import great_circle  # Keep existing imports
+
+# Import your Satellite class definition (adjust path if necessary)
+from src.dynamic_state.topology import Satellite
 
 
-def distance_m_between_satellites(sat1, sat2, epoch_str, date_str):
+def distance_m_between_satellites(
+    sat1: Satellite, sat2: Satellite, epoch_str: str, date_str: str
+) -> float:
     """
     Computes the straight distance between two satellites in meters.
 
-    :param sat1:       The first satellite
-    :param sat2:       The other satellite
-    :param epoch_str:  Epoch time of the observer (string)
-    :param date_str:   The time instant when the distance should be measured (string)
+    Accepts custom Satellite wrapper objects.
 
-    :return: The distance between the satellites in meters
+    :param sat1:       The first Satellite object.
+    :param sat2:       The other Satellite object.
+    :param epoch_str:  Epoch time string (e.g., "2000-01-01 00:00:00").
+    :param date_str:   The time instant string (e.g., "2000-01-01 00:00:00").
+
+    :return: The distance between the satellites in meters (float).
+    :raises AttributeError: If satellite objects lack expected position/ephem attributes.
+    :raises ValueError: If ephem objects are invalid.
+    :raises RuntimeError: For other ephem calculation errors.
     """
+    try:
+        # 1. Extract underlying ephem.Body objects
+        #    Choose manual or direct based on which one is populated/needed
+        if not hasattr(sat1, "position") or not hasattr(sat1.position, "ephem_obj_manual"):
+            raise AttributeError(
+                f"Satellite object for sat_id {getattr(sat1, 'id', 'UNKNOWN')} is missing position or ephem_obj_manual"
+            )
+        ephem_body1 = sat1.position.ephem_obj_manual  # Or ephem_obj_direct
 
-    # Create an observer somewhere on the planet
-    observer = ephem.Observer()
-    observer.epoch = epoch_str
-    observer.date = date_str
-    observer.lat = 0
-    observer.lon = 0
-    observer.elevation = 0
+        if not hasattr(sat2, "position") or not hasattr(sat2.position, "ephem_obj_manual"):
+            raise AttributeError(
+                f"Satellite object for sat_id {getattr(sat2, 'id', 'UNKNOWN')} is missing position or ephem_obj_manual"
+            )
+        ephem_body2 = sat2.position.ephem_obj_manual  # Or ephem_obj_direct
 
-    # Calculate the relative location of the satellites to this observer
-    sat1.compute(observer)
-    sat2.compute(observer)
+        if not isinstance(ephem_body1, ephem.Body) or not isinstance(ephem_body2, ephem.Body):
+            raise ValueError("Extracted ephem objects are not valid ephem.Body types.")
 
-    # Calculate the angle observed by the observer to the satellites (this is done because the .compute() calls earlier)
-    angle_radians = float(repr(ephem.separation(sat1, sat2)))
+        # 2. Create an observer (position doesn't strictly matter for separation angle,
+        #    but range calculation depends on it - using 0,0 is fine here)
+        observer = ephem.Observer()
+        observer.epoch = epoch_str  # TLE epoch
+        observer.date = date_str  # Current time
+        observer.lat = "0"  # degrees string
+        observer.lon = "0"  # degrees string
+        observer.elevation = 0.0
 
-    # Now we have a triangle with three knows:
-    # (1) a = sat1.range (distance observer to satellite 1)
-    # (2) b = sat2.range (distance observer to satellite 2)
-    # (3) C = angle (the angle at the observer point within the triangle)
-    #
-    # Using the formula:
-    # c^2 = a^2 + b^2 - 2 * a * b * cos(C)
-    #
-    # This gives us side c, the distance between the two satellites
-    return math.sqrt(
-        sat1.range**2 + sat2.range**2 - (2 * sat1.range * sat2.range * math.cos(angle_radians))
-    )
+        # 3. Calculate the relative location by computing the ephem.Body objects
+        ephem_body1.compute(observer)
+        ephem_body2.compute(observer)
+
+        # 4. Calculate the separation angle using the computed ephem.Body objects
+        # Ensure ephem.separation result is converted correctly (it's often an ephem.Angle)
+        angle_radians = float(ephem.separation(ephem_body1, ephem_body2))
+
+        # 5. Get ranges from the *computed* ephem.Body objects
+        range1 = ephem_body1.range
+        range2 = ephem_body2.range
+
+        # Check for potential issues (e.g., satellite below horizon for the arbitrary observer)
+        if range1 is None or range2 is None or range1 <= 0 or range2 <= 0:
+            # This might happen if a satellite is below the horizon for the observer at 0,0
+            # The geometric approach might be less stable in such cases.
+            # Consider alternative (e.g., Cartesian distance) if this occurs frequently.
+            # For now, return infinity or raise an error.
+            # print(f"Warning: Invalid range detected for ISL distance ({range1}, {range2})") # Use logger
+            return float("inf")  # Indicate invalid distance
+
+        # 6. Calculate distance using Law of Cosines
+        # c^2 = a^2 + b^2 - 2 * a * b * cos(C)
+        cos_term = 2 * range1 * range2 * math.cos(angle_radians)
+        distance_sq = (range1**2) + (range2**2) - cos_term
+
+        # Handle potential floating point issues near zero
+        if distance_sq < 0:
+            # This can happen due to floating point errors if angle is near 0 or pi
+            # and ranges are almost equal. Treat distance as near zero.
+            # print(f"Warning: Negative value in sqrt for ISL distance ({distance_sq}). Clamping to 0.") # Use logger
+            return 0.0
+
+        distance_m = math.sqrt(distance_sq)
+        return distance_m
+
+    except (AttributeError, ValueError) as e:
+        print(f"[distance_tools] Input Error calculating ISL distance: {e}")  # Use logger
+        raise e  # Re-raise configuration/input errors
+    except Exception as e:
+        print(f"[distance_tools] Runtime Error calculating ISL distance: {e}")  # Use logger
+        raise
 
 
 def distance_m_ground_station_to_satellite(ground_station, satellite, epoch_str, date_str):

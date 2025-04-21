@@ -146,7 +146,6 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
             ground_station_satellites_in_range=self.visibility,
             list_gsl_interfaces_info=self.gsl_info,
             prev_output=None,  # Test with no previous output first
-            enable_verbose_logs=self.enable_logs,
         )
 
         # 1. Assert Bandwidth Calculation
@@ -189,7 +188,6 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
             ground_station_satellites_in_range=self.visibility,
             list_gsl_interfaces_info=self.gsl_info,
             prev_output=self.prev_output_data,  # Pass previous output
-            enable_verbose_logs=self.enable_logs,
         )
 
         # Assert helper was still called correctly (prev_output['fstate'] is extracted but not used in call)
@@ -217,7 +215,6 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
             ground_station_satellites_in_range=self.visibility,
             list_gsl_interfaces_info=short_gsl_info,  # Use short list
             prev_output=None,
-            enable_verbose_logs=self.enable_logs,
         )
 
         # Assert bandwidth: Node 3 should have default BW=0 due to fallback
@@ -250,7 +247,6 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
             ground_station_satellites_in_range=self.visibility,
             list_gsl_interfaces_info=self.gsl_info,
             prev_output=None,
-            enable_verbose_logs=self.enable_logs,
         )
 
         # Assert fstate is empty dictionary on error
@@ -266,7 +262,3 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
         self.mock_log.exception.assert_called_once_with(
             f"Error during forwarding state calculation: {test_exception}"
         )
-
-
-if __name__ == "__main__":
-    unittest.main()
