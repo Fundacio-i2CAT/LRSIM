@@ -101,7 +101,7 @@ class TestDistanceTools(unittest.TestCase):
             epoch = Time("2000-01-01 00:00:00", scale="tdb")
             # Ensure time calculation is correct and compatible with str() conversion expected by distance func
             time_obj = epoch + extra_time_ns * u.ns
-            time_str = time_obj.isot  # Use isot format string explicitly
+            time_str = time_obj.strftime("%Y/%m/%d %H:%M:%S")  # Format as YYYY/MM/DD HH:MM:SS
             epoch_str_for_ephem = str(epoch.strftime("%Y/%m/%d"))
 
             # --- Pass Satellite WRAPPER objects to the function ---
