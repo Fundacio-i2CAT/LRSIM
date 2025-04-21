@@ -2,6 +2,7 @@
 # Updated based on provided LEOTopology class definition
 
 import math
+
 import networkx as nx
 import numpy as np
 from astropy import units as astro_units
@@ -343,24 +344,26 @@ def _compute_ground_station_satellites_in_range(
     for gs_idx, ground_station in enumerate(gs_list):
         satellites_in_range_for_this_gs = []
         for satellite in satellites:
-            # Ensure satellite object is valid (has position attribute)
             if not hasattr(satellite, "position") or not hasattr(satellite, "id"):
                 log.warning(f"Skipping visibility check for invalid satellite object: {satellite}")
                 continue
 
             try:
+                time_str_for_ephem = str(current_time.strftime("%Y/%m/%d %H:%M:%S.%f")[:-3])
+                epoch_str_for_ephem = topology.constellation_data.epoch
                 distance_m = distance_tools.distance_m_ground_station_to_satellite(
-                    ground_station,  # GroundStation object
-                    satellite.position,  # SatelliteEphemeris object
-                    topology.constellation_data.epoch,  # Epoch string
-                    str(current_time),  # Time string
+                    ground_station,  # Pass GroundStation object
+                    satellite,  # Pass Satellite object (NOT satellite.position)
+                    epoch_str_for_ephem,  # Pass epoch string
+                    time_str_for_ephem,  # Pass formatted time string
                 )
             except Exception as e:
-                # Log specific error and treat as infinite distance
+                # Log specific error, include IDs for easier debugging
                 log.error(
-                    f"GSL distance calculation failed for GS {ground_station.id} <-> Sat {satellite.id}: {e}"
+                    f"GSL distance calculation failed for GS {getattr(ground_station, 'id', 'N/A')} "
+                    f"<-> Sat {getattr(satellite, 'id', 'N/A')}: {e}"
                 )
-                distance_m = float("inf")
+                distance_m = float("inf")  # Treat as out of range on error
 
             # Check against max length from constellation_data
             if distance_m <= topology.constellation_data.max_gsl_length_m:
@@ -371,7 +374,6 @@ def _compute_ground_station_satellites_in_range(
                 ):
                     topology.graph.add_edge(satellite.id, ground_station.id, weight=distance_m)
                 else:
-                    # This warning implies nodes were not added correctly in _build_topologies
                     log.warning(
                         f"Cannot add GSL edge ({satellite.id}, {ground_station.id}): Node(s) missing from graph."
                     )

@@ -3,14 +3,15 @@
 # The MIT License (MIT)
 # ... (License remains the same) ...
 
+from src import logger
+from src.dynamic_state.topology import ConstellationData, GroundStation, LEOTopology
+
 # --- Assume fstate_calculation is refactored ---
 # We expect a function like calculate_fstate_shortest_path_object
 # which takes topology, visibility, prev_state object and returns the fstate object
-from .fstate_calculation import (
+from .fstate_calculation import (  # Renamed/refactored function
     calculate_fstate_shortest_path_object_no_gs_relay,
-)  # Renamed/refactored function
-from src.dynamic_state.topology import ConstellationData, GroundStation, LEOTopology
-from src import logger
+)
 
 # Remove graph utils import if _check_graph_is_valid is removed or uses topology methods directly
 # from .utils import graph as graph_utils

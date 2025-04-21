@@ -254,58 +254,86 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         self.assertEqual(len(topo_gsl.graph.nodes), expected_nodes)
 
     def test_compute_ground_station_satellites_in_range(self):
-        """Test _compute_ground_station_satellites_in_range adds edges correctly using actual objects."""
+        """Test _compute_ground_station_satellites_in_range adds edges correctly using MOCKED distances."""  # Clarified docstring
         topology = MockLEOTopologyRefined(self.constellation_data, self.ground_stations)
 
-        # Define mock distances based on actual GS object and Satellite.position object
-        def side_effect_func(gs_obj, sat_ephemeris_obj, epoch_str, time_str):
-            # Identify satellite based on the ephemeris object passed
-            sat_id = -1
-            for sat in self.satellites:
-                if sat.position == sat_ephemeris_obj:
-                    sat_id = sat.id
-                    break
+        # Define mock distances based on actual GS object and Satellite object ID
+        in_range_dist = self.max_gsl_m - 1000
+        out_of_range_dist = self.max_gsl_m + 1000
 
+        # Side effect function needs to handle receiving the full Satellite object now
+        def side_effect_func(
+            gs_obj, sat_obj, epoch_str, time_str
+        ):  # Changed second arg name for clarity
+            # Identify satellite based on the passed Satellite object's ID
+            sat_id = sat_obj.id
+
+            # Define which pairs should be in range for this test
             if gs_obj.id == self.gs1_id and sat_id == 0:
-                return self.max_gsl_m - 1000  # In range
+                return in_range_dist
             if gs_obj.id == self.gs1_id and sat_id == 1:
-                return self.max_gsl_m + 1000  # Out of range
+                return out_of_range_dist
             if gs_obj.id == self.gs2_id and sat_id == 2:
-                return self.max_gsl_m - 500  # In range
-            return self.max_gsl_m + 2000  # Default out
+                return in_range_dist  # Assumes self.num_sats >= 3
+            return out_of_range_dist
 
         self.mock_distance_tools.distance_m_ground_station_to_satellite.side_effect = (
             side_effect_func
         )
+
+        # Call the function under test (this part is likely correct now)
         generate_dynamic_state._compute_ground_station_satellites_in_range(
             topology, self.current_time_absolute
         )
+
+        # --- Assertions ---
+        # Check call count
         self.assertEqual(
             self.mock_distance_tools.distance_m_ground_station_to_satellite.call_count,
             len(self.ground_stations) * self.num_sats,
         )
-        self.mock_distance_tools.distance_m_ground_station_to_satellite.assert_any_call(
-            self.gs1,  # Actual GroundStation object
-            self.satellites[0].position,  # SatelliteEphemeris object from Satellite 0
-            self.string_epoch,
-            str(self.current_time_absolute),  # Absolute time string
-        )
-        self.mock_distance_tools.distance_m_ground_station_to_satellite.assert_any_call(
-            self.gs2,  # Actual GroundStation object
-            self.satellites[2].position,  # SatelliteEphemeris object from Satellite 2
-            # CORRECTED: Use the string epoch stored in ConstellationData
-            self.string_epoch,
-            str(self.current_time_absolute),
-        )
 
-        # Check graph edges using IDs
-        self.assertTrue(topology.graph.has_edge(self.gs1_id, 0))
-        self.assertFalse(topology.graph.has_edge(self.gs1_id, 1))
-        self.assertTrue(topology.graph.has_edge(self.gs2_id, 2))
-        self.assertEqual(
-            topology.graph.get_edge_data(self.gs1_id, 0)["weight"],
-            self.max_gsl_m - 1000,
+        # Create the expected formatted time string
+        expected_time_str = self.current_time_absolute.strftime("%Y/%m/%d %H:%M:%S.%f")[:-3]
+
+        self.mock_distance_tools.distance_m_ground_station_to_satellite.assert_any_call(
+            self.gs1,  # GroundStation object
+            self.satellites[0],
+            self.string_epoch,  # Epoch string from ConstellationData
+            expected_time_str,
         )
+        # Update other assert_any_call if you have them
+        # Example assuming num_sats >= 3:
+        if self.num_sats >= 3:
+            self.mock_distance_tools.distance_m_ground_station_to_satellite.assert_any_call(
+                self.gs2,  # GroundStation object
+                self.satellites[2],  # Satellite object
+                self.string_epoch,  # Epoch string from ConstellationData
+                expected_time_str,  # Formatted time string
+            )
+
+        # Check graph edges based on side_effect logic (should be okay if side_effect is correct)
+        if self.num_sats >= 3:  # Check depends on test setup
+            expected_edges_in_test = [(self.gs1_id, 0), (self.gs2_id, 2)]
+            not_expected_edges_in_test = []
+            for gs in self.ground_stations:
+                for sat in self.satellites:
+                    if (gs.id, sat.id) not in expected_edges_in_test:
+                        not_expected_edges_in_test.append((gs.id, sat.id))
+
+            for u, v in expected_edges_in_test:
+                self.assertTrue(
+                    topology.graph.has_edge(u, v), f"Expected edge ({u}, {v}) not found"
+                )
+                weight = topology.graph.get_edge_data(u, v).get("weight")
+                self.assertAlmostEqual(
+                    weight, in_range_dist, delta=0.01, msg=f"Edge ({u},{v}) weight incorrect"
+                )
+
+            for u, v in not_expected_edges_in_test:
+                self.assertFalse(topology.graph.has_edge(u, v), f"Unexpected edge ({u}, {v}) found")
+
+            self.assertEqual(topology.graph.number_of_edges(), len(expected_edges_in_test))
 
     def test_generate_dynamic_state_at_unknown_algorithm(self):
         """Test ValueError is raised for an unknown algorithm name."""

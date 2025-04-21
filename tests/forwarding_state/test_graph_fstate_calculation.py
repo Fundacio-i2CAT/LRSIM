@@ -1,18 +1,19 @@
 # tests/dynamic_state/test_fstate_calculation_refactored.py
 
 import unittest
-import networkx as nx
 from unittest.mock import MagicMock
+
 import ephem  # For mocking spec
+import networkx as nx
 
 # Function to test
 from src.dynamic_state.fstate_calculation import calculate_fstate_shortest_path_object_no_gs_relay
 
 # Classes needed for setup
 from src.dynamic_state.topology import (
+    ConstellationData,
     GroundStation,
     LEOTopology,
-    ConstellationData,
     Satellite,
 )
 

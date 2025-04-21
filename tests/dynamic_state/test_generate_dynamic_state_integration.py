@@ -1,9 +1,10 @@
 # tests/dynamic_state/test_generate_dynamic_state_integration.py
 
+import math
 import unittest
+
 import ephem  # For creating real satellite objects from TLEs
 from astropy.time import Time
-import math
 
 # Modules and classes to test/use
 from src.dynamic_state.generate_dynamic_state import generate_dynamic_state_at

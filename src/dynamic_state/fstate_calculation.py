@@ -1,10 +1,12 @@
 # fstate_calculation.py (Refactored Function)
 
 import math
+
 import networkx as nx
 import numpy as np  # Import numpy for inf checking
-from src.dynamic_state.topology import LEOTopology, GroundStation, Satellite
+
 from src import logger  # Optional: if logging is desired
+from src.dynamic_state.topology import GroundStation, LEOTopology, Satellite
 
 log = logger.get_logger(__name__)  # Optional
 
@@ -31,186 +33,134 @@ def calculate_fstate_shortest_path_object_no_gs_relay(
     """
     log.debug("Calculating shortest path fstate object (no GS relay)")
 
-    constellation_data = topology_with_isls.constellation_data
-    sat_graph = topology_with_isls.graph  # Graph with ISLs
+    # Get the full graph which might contain GS nodes too
+    full_graph = topology_with_isls.graph
     sat_neighbor_to_if = topology_with_isls.sat_neighbor_to_if
     num_ground_stations = len(ground_stations)
 
-    # --- Prepare for Floyd-Warshall with potentially non-sequential satellite IDs ---
+    # --- Prepare for Floyd-Warshall on SATELLITE-ONLY subgraph ---
 
-    # 1. Create the explicit list of satellite nodes to use for path calculation.
-    #    Only include nodes actually present in the graph.
-    #    Assuming satellite IDs are the nodes in sat_graph intended for pathfinding.
-    #    Filter out any potential non-satellite nodes if the graph construction allows them.
-    #    Sorting ensures consistent matrix ordering if node order changes run-to-run.
-    nodelist = sorted(
-        [
-            node
-            for node in sat_graph.nodes()
-            # Add check if needed: Ensure node represents a satellite, e.g., check type or ID range
-            # if isinstance(node, int) and node < constellation_data.number_of_satellites # Example check
-        ]
-    )
-
-    if not nodelist:
-        log.warning("ISL topology graph contains no nodes for path calculation.")
+    # 1. Identify all known satellite IDs from the topology object
+    try:
+        all_satellite_ids = {sat.id for sat in topology_with_isls.get_satellites()}
+    except Exception as e:
+        log.exception(f"Error getting satellite IDs from topology: {e}")
         return {}
 
-    # 2. Create ID-to-index mapping for accessing the distance matrix
+    # 2. Create the nodelist containing only satellite IDs that are present in the full graph
+    nodelist = sorted([node_id for node_id in full_graph.nodes() if node_id in all_satellite_ids])
+
+    if not nodelist:
+        log.warning("No valid satellite nodes found in the graph for path calculation.")
+        return {}
+
+    # 3. Create the ID-to-index mapping for satellites
     node_to_index = {node_id: index for index, node_id in enumerate(nodelist)}
 
-    # 3. Calculate shortest path distances using the explicit nodelist
+    # 4. **** Create a subgraph view containing only satellites and their ISLs ****
+    # This view will only include nodes present in the nodelist and edges between them.
+    sat_subgraph = full_graph.subgraph(nodelist)
+
+    # Check if the satellite subgraph is empty (could happen if nodes exist but no ISLs connect them)
+    if sat_subgraph.number_of_nodes() == 0:
+        log.warning("Satellite subgraph is empty. No ISL paths possible.")
+        # Fallback: Calculate fstate with only direct GSL hops possible?
+        # For now, return empty fstate as ISL paths are expected.
+        return {}
+
+    # 5. Calculate shortest path distances using the SUBGRAPH and satellite nodelist
     try:
-        log.debug(f"Calculating Floyd-Warshall on ISL graph for {len(nodelist)} nodes...")
-        # The returned matrix `dist_matrix[i, j]` corresponds to distance
-        # between `nodelist[i]` and `nodelist[j]`
-        dist_matrix = nx.floyd_warshall_numpy(sat_graph, nodelist=nodelist, weight="weight")
+        log.debug(f"Calculating Floyd-Warshall on satellite subgraph for {len(nodelist)} nodes...")
+        # Pass the subgraph and the corresponding nodelist
+        dist_matrix = nx.floyd_warshall_numpy(sat_subgraph, nodelist=nodelist, weight="weight")
         log.debug("Floyd-Warshall calculation complete.")
     except (nx.NetworkXError, Exception) as e:
-        # Catch NetworkX specific errors and potentially others (e.g., NumPy issues)
+        # Check if error is due to disconnected components in sat_subgraph
+        # Note: Floyd-Warshall handles disconnected nodes by returning np.inf
+        # The error might be something else (e.g., non-numeric weights).
         log.error(f"Error during Floyd-Warshall shortest path calculation: {e}")
         return {}  # Return empty state on error
 
-    fstate = {}  # Initialize the forwarding state dictionary
+    fstate = {}
+    dist_satellite_to_ground_station = {}  # Initialize the dictionary to store distances
 
     # --- Satellites to Ground Stations ---
-    dist_satellite_to_ground_station = {}  # Helper dict: {(sat_id, dst_gs_id): distance_m}
-
-    # Iterate through satellite IDs that are actually in the graph nodelist
+    # Iterate only over satellite IDs in the calculated nodelist
     for curr_sat_id in nodelist:
-        # Get the index corresponding to the current satellite ID for matrix access
         curr_sat_idx = node_to_index[curr_sat_id]
-
-        # Get satellite object to access number_isls later
         try:
             current_satellite = topology_with_isls.get_satellite(curr_sat_id)
-        except (KeyError, IndexError):  # Handle potential errors if get_satellite fails
-            log.error(f"Could not find satellite object with ID {curr_sat_id} in topology.")
-            continue  # Skip this satellite if object not found
+        except KeyError:
+            log.error(
+                f"Could not find satellite object {curr_sat_id} (should exist based on nodelist)."
+            )
+            continue
 
         for gs_idx, dst_gs in enumerate(ground_stations):
-            dst_gs_node_id = dst_gs.id  # Use the actual ground station ID
-
-            # Find best exit satellite (dst_sat_id) for dst_gs among visible candidates
-            # ground_station_satellites_in_range uses the index matching ground_stations list
+            dst_gs_node_id = dst_gs.id
             if gs_idx >= len(ground_station_satellites_in_range):
-                log.warning(
-                    f"Index {gs_idx} out of bounds for ground_station_satellites_in_range. Skipping GS {dst_gs_node_id}."
-                )
-                continue
+                continue  # Safety check
             possible_dst_sats = ground_station_satellites_in_range[gs_idx]
-            possibilities = []  # List of (total_dist_m, exit_sat_id)
+            possibilities = []
 
             for visibility_info in possible_dst_sats:
                 dist_gs_to_sat_m, visible_sat_id = visibility_info
                 visible_sat_idx = node_to_index.get(visible_sat_id)
-
-                # Check if the satellite visible from GS is part of the ISL graph pathfinding
-                if visible_sat_idx is not None:
-                    # Access distance matrix using indices
+                if visible_sat_idx is not None:  # Check if visible sat is in our ISL network
                     dist_curr_to_visible_sat = dist_matrix[curr_sat_idx, visible_sat_idx]
-                    # Check reachability using numpy's isinf
                     if not np.isinf(dist_curr_to_visible_sat):
                         total_dist = dist_curr_to_visible_sat + dist_gs_to_sat_m
                         possibilities.append((total_dist, visible_sat_id))
-                else:
-                    # Satellite visible by GS is not in the ISL graph nodelist, cannot be exit node
-                    pass
-                    # log.debug(f"Sat {visible_sat_id} visible to GS {dst_gs_node_id} not in ISL nodelist.")
 
-            possibilities.sort()  # Sort by total distance
+            possibilities.sort()
 
-            next_hop_decision = (-1, -1, -1)  # Default: drop packet
+            next_hop_decision = (-1, -1, -1)
             distance_to_ground_station_m = float("inf")
 
-            if possibilities:  # If at least one path exists
-                distance_to_ground_station_m, dst_sat_id = possibilities[
-                    0
-                ]  # Best path distance and exit sat ID
-                dst_sat_idx = node_to_index.get(dst_sat_id)  # Get index for best exit sat
+            if possibilities:
+                distance_to_ground_station_m, dst_sat_id = possibilities[0]
+                dst_sat_idx = node_to_index.get(dst_sat_id)
+                if dst_sat_idx is None:
+                    continue  # Should not happen
 
-                if (
-                    dst_sat_idx is None
-                ):  # Should not happen if possibilities is non-empty & consistent
-                    log.error(
-                        f"Logic error: Best exit satellite {dst_sat_id} not found in index map after sorting."
-                    )
-                    continue
-
-                # If the current satellite is not the best exit satellite...
                 if curr_sat_id != dst_sat_id:
-                    # Find the best neighbor of curr_sat_id to route towards dst_sat_id
                     best_neighbor_dist_m = float("inf")
-                    if curr_sat_id not in sat_graph:  # Defensive check
-                        log.warning(f"Current satellite {curr_sat_id} disappeared from graph?")
-                    else:
-                        for neighbor_id in sat_graph.neighbors(curr_sat_id):
-                            neighbor_idx = node_to_index.get(neighbor_id)
-                            # Check if neighbor is in the ISL graph used for pathfinding
-                            if neighbor_idx is not None:
-                                try:
-                                    link_weight = sat_graph.edges[curr_sat_id, neighbor_id][
-                                        "weight"
-                                    ]
-                                    # Access distance matrix using indices
-                                    dist_neighbor_to_dst_sat = dist_matrix[
-                                        neighbor_idx, dst_sat_idx
-                                    ]
-
-                                    if not np.isinf(dist_neighbor_to_dst_sat):
-                                        distance_m = link_weight + dist_neighbor_to_dst_sat
-                                        if distance_m < best_neighbor_dist_m:
-                                            # Get ISL interface IDs from topology map
-                                            my_if = sat_neighbor_to_if.get(
-                                                (curr_sat_id, neighbor_id), -1
-                                            )
-                                            next_hop_if = sat_neighbor_to_if.get(
-                                                (neighbor_id, curr_sat_id), -1
-                                            )
-                                            if my_if == -1 or next_hop_if == -1:
-                                                log.warning(
-                                                    f"Missing ISL interface mapping for link ({curr_sat_id}, {neighbor_id})"
-                                                )
-                                            next_hop_decision = (neighbor_id, my_if, next_hop_if)
-                                            best_neighbor_dist_m = distance_m
-                                except KeyError:
-                                    log.warning(
-                                        f"Edge/weight missing for link ({curr_sat_id}, {neighbor_id}) in ISL graph"
-                                    )
-                                    continue  # Skip this neighbor
-                            else:
-                                # Neighbor node not in nodelist used for distance matrix
-                                pass
-                                # log.debug(f"Neighbor {neighbor_id} of Sat {curr_sat_id} not in ISL nodelist.")
-
-                else:  # The current satellite IS the best exit satellite
-                    # Next hop is the ground station itself.
+                    # **** Iterate over neighbors in the SUBGRAPH ****
+                    for neighbor_id in sat_subgraph.neighbors(curr_sat_id):
+                        neighbor_idx = node_to_index.get(neighbor_id)
+                        if neighbor_idx is not None:
+                            try:
+                                # Get weight from subgraph (or original graph)
+                                link_weight = sat_subgraph.edges[curr_sat_id, neighbor_id]["weight"]
+                                dist_neighbor_to_dst_sat = dist_matrix[neighbor_idx, dst_sat_idx]
+                                if not np.isinf(dist_neighbor_to_dst_sat):
+                                    distance_m = link_weight + dist_neighbor_to_dst_sat
+                                    if distance_m < best_neighbor_dist_m:
+                                        my_if = sat_neighbor_to_if.get(
+                                            (curr_sat_id, neighbor_id), -1
+                                        )
+                                        next_hop_if = sat_neighbor_to_if.get(
+                                            (neighbor_id, curr_sat_id), -1
+                                        )
+                                        next_hop_decision = (neighbor_id, my_if, next_hop_if)
+                                        best_neighbor_dist_m = distance_m
+                            except KeyError:
+                                log.warning(...)  # Keep warning
+                        # else: # Neighbor not satellite -> ignore for ISL path
+                else:  # Current satellite IS the best exit satellite
                     try:
-                        # Get the Satellite object for the current/destination satellite
-                        dst_satellite = topology_with_isls.get_satellite(
-                            dst_sat_id
-                        )  # curr_sat_id == dst_sat_id
+                        dst_satellite = topology_with_isls.get_satellite(dst_sat_id)
                         num_isls_dst_sat = dst_satellite.number_isls
-                        # Assume GSL IF index follows ISL IF indices (0 to num_isls-1 are ISLs)
-                        my_gsl_if = (
-                            num_isls_dst_sat  # GSL IF = number of ISLs (assuming 0-based IF count)
-                        )
-                        # Assume ground station incoming GSL interface is always 0 ("one" algorithm)
+                        my_gsl_if = num_isls_dst_sat
                         next_hop_gsl_if = 0
                         next_hop_decision = (dst_gs_node_id, my_gsl_if, next_hop_gsl_if)
-                    except (KeyError, IndexError):
-                        log.error(
-                            f"Could not find satellite object {dst_sat_id} for GSL hop calculation."
-                        )
-                        next_hop_decision = (-1, -1, -1)  # Fallback to drop
+                    except KeyError:
+                        log.error(...)
+                        next_hop_decision = (-1, -1, -1)
 
-            # Store intermediate distance for GS->GS calculation
             dist_satellite_to_ground_station[(curr_sat_id, dst_gs_node_id)] = (
                 distance_to_ground_station_m
             )
-
-            # Store forwarding state entry: Sat -> GS
-            # Key is (Current Sat ID, Destination GS ID)
             fstate[(curr_sat_id, dst_gs_node_id)] = next_hop_decision
 
     # --- Ground Stations to Ground Stations ---

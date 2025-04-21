@@ -1,7 +1,8 @@
 # tests/dynamic_state/test_algorithm_free_one_only_over_isls.py
 
 import unittest
-from unittest.mock import patch, MagicMock, call, ANY
+from unittest.mock import ANY, MagicMock, call, patch
+
 import ephem  # For mocking spec
 
 # Function/Module to test
@@ -9,9 +10,9 @@ from src.dynamic_state import algorithm_free_one_only_over_isls
 
 # Dependencies needed for test setup
 from src.dynamic_state.topology import (
+    ConstellationData,
     GroundStation,
     LEOTopology,
-    ConstellationData,
     Satellite,
 )
 
