@@ -184,11 +184,13 @@ class TestDynamicStateIntegration(unittest.TestCase):
         self.maxDiff = None
         self.assertDictEqual(result_state["fstate"], expected_fstate)
 
+    # In tests/dynamic_state/test_generate_dynamic_state_integration.py
+
     def test_non_sequential_ids(self):
         """
-        Integration test with non-sequential IDs for satellites and ground stations.
-        Ensures the system handles non-sequential IDs correctly using the same
-        orbital/location data as test_equator_scenario_t0.
+        Integration test using non-sequential IDs with valid TLE data.
+        Checks fstate and bandwidth calculation for non-sequential IDs.
+        Uses TLE data known to work from test_equator_scenario_t0.
         """
         # --- Inputs ---
         output_dir = None
@@ -196,19 +198,17 @@ class TestDynamicStateIntegration(unittest.TestCase):
         time_since_epoch_ns = 0
         dynamic_state_algorithm = "algorithm_free_one_only_over_isls"
         prev_output = None
-        # Use same max lengths as equator test
+        # Use max lengths from other test for consistency with TLEs
         max_gsl_length_m = 1089686.4181956202
         max_isl_length_m = 5016591.2330984278
 
-        # Define non-sequential IDs
-        sat_id_map = {0: 10, 1: 20, 2: 30, 3: 40}
-        gs_id_map = {4: 100, 5: 200, 6: 300, 7: 400}
-        new_sat_ids = list(sat_id_map.values())
-        new_gs_ids = list(gs_id_map.values())
-        all_new_node_ids = new_sat_ids + new_gs_ids
+        # Define non-sequential IDs to use
+        sat_ids = [10, 20, 30, 40]
+        gs_ids = [100, 200, 300, 400]
+        all_node_ids = sat_ids + gs_ids
 
-        # Use IDENTICAL TLE orbital data, just assign different IDs
-        tle_data_orig = {
+        # Use known VALID TLE data from the first test
+        tle_data_valid = {
             0: (
                 "Starlink-550 0",
                 "1 01308U 00000ABC 00001.00000000  .00000000  00000-0  00000+0 0    05",
@@ -230,67 +230,64 @@ class TestDynamicStateIntegration(unittest.TestCase):
                 "2 01311  53.0000 295.0000 0000001   0.0000 204.5455 15.19000000    04",
             ),
         }
+
+        # Create Satellite objects assigning the NON-SEQUENTIAL IDs
         satellites = []
-        for original_sat_id, tle_lines in tle_data_orig.items():
-            new_sat_id = sat_id_map[original_sat_id]  # Get the new non-sequential ID
+        for i, new_id in enumerate(sat_ids):
+            tle_lines = tle_data_valid[i]  # Get corresponding valid TLE
             try:
                 ephem_obj = ephem.readtle(tle_lines[0], tle_lines[1], tle_lines[2])
-                # Create Satellite object with the NEW ID
                 satellites.append(
-                    Satellite(id=new_sat_id, ephem_obj_manual=ephem_obj, ephem_obj_direct=ephem_obj)
+                    Satellite(id=new_id, ephem_obj_manual=ephem_obj, ephem_obj_direct=ephem_obj)
                 )
             except ValueError as e:
-                self.fail(f"Failed to read TLE for original sat_id {original_sat_id}: {e}")
+                self.fail(f"Failed to read known-good TLE for original index {i}: {e}")
 
-        # Use IDENTICAL Ground Station location data, just assign different IDs
-        gs_data_orig = [
+        # Use same ground station location data, assign NON-SEQUENTIAL IDs
+        gs_data = [
             {
-                "orig_gid": 4,
-                "name": "Luanda",
                 "lat": "-8.836820",
                 "lon": "13.234320",
                 "elv": 0.0,
                 "x": 6135530.18,
                 "y": 1442953.50,
                 "z": -973332.34,
+                "name": "Luanda",
             },
             {
-                "orig_gid": 5,
-                "name": "Lagos",
                 "lat": "6.453060",
                 "lon": "3.395830",
                 "elv": 0.0,
                 "x": 6326864.17,
                 "y": 375422.89,
                 "z": 712064.78,
+                "name": "Lagos",
             },
             {
-                "orig_gid": 6,
-                "name": "Kinshasa",
                 "lat": "-4.327580",
                 "lon": "15.313570",
                 "elv": 0.0,
                 "x": 6134256.67,
                 "y": 1679704.40,
                 "z": -478073.16,
+                "name": "Kinshasa",
             },
             {
-                "orig_gid": 7,
-                "name": "Ar-Riyadh-(Riyadh)",
                 "lat": "24.690466",
                 "lon": "46.709566",
                 "elv": 0.0,
                 "x": 3975957.34,
                 "y": 4220595.03,
                 "z": 2647959.98,
+                "name": "Ar-Riyadh-(Riyadh)",
             },
         ]
         ground_stations = []
-        for d in gs_data_orig:
-            new_gs_id = gs_id_map[d["orig_gid"]]  # Get the new non-sequential ID
+        for i, new_id in enumerate(gs_ids):
+            d = gs_data[i]
             ground_stations.append(
                 GroundStation(
-                    gid=new_gs_id,  # Use NEW ID
+                    gid=new_id,
                     name=d["name"],
                     latitude_degrees_str=d["lat"],
                     longitude_degrees_str=d["lon"],
@@ -311,16 +308,12 @@ class TestDynamicStateIntegration(unittest.TestCase):
         )
 
         # Define ISLs using NON-SEQUENTIAL IDs corresponding to original 0-1, 1-2, 2-3
-        undirected_isls = [
-            (sat_id_map[0], sat_id_map[1]),  # 10, 20
-            (sat_id_map[1], sat_id_map[2]),  # 20, 30
-            (sat_id_map[2], sat_id_map[3]),  # 30, 40
-        ]
+        undirected_isls = [(10, 20), (20, 30), (30, 40)]
 
         # Define GSL Interface Info using NON-SEQUENTIAL IDs
         list_gsl_interfaces_info = [
             {"id": node_id, "number_of_interfaces": 1, "aggregate_max_bandwidth": 1.0}
-            for node_id in all_new_node_ids
+            for node_id in all_node_ids
         ]
 
         # --- Execute ---
@@ -342,10 +335,10 @@ class TestDynamicStateIntegration(unittest.TestCase):
         self.assertIn("bandwidth", result_state)
 
         # Assert Bandwidth state (uses non-sequential IDs)
-        expected_bandwidth = {node_id: 1.0 for node_id in all_new_node_ids}
+        expected_bandwidth = {node_id: 1.0 for node_id in all_node_ids}
         self.assertDictEqual(result_state["bandwidth"], expected_bandwidth)
 
-        # Assert Forwarding state (using the translated dictionary)
+        # Assert Forwarding state (using the correctly translated dictionary)
         expected_fstate = {
             # Sat 10 -> GS
             (10, 100): (20, 0, 0),
