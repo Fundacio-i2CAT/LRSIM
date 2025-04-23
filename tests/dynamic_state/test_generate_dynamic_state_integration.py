@@ -10,7 +10,10 @@ from astropy.time import Time
 from astropy import units as astro_units
 
 # Modules and classes to test/use
-from src.dynamic_state.generate_dynamic_state import generate_dynamic_state_at
+from src.dynamic_state.generate_dynamic_state import (
+    generate_dynamic_state,
+    generate_dynamic_state_at,
+)
 from src.dynamic_state.topology import ConstellationData, GroundStation, Satellite
 
 
@@ -381,4 +384,205 @@ class TestDynamicStateIntegration(unittest.TestCase):
         self.maxDiff = None
         self.assertDictEqual(
             result_state["fstate"], expected_fstate, "F-state mismatch for non-sequential IDs."
+        )
+
+    def test_full_loop_short_run(self):
+        """
+        Integration test for the main generate_dynamic_state loop.
+        Runs for 3 steps (t=0, 1s, 2s) and checks the exact final state.
+        Uses non-sequential IDs with equator TLE data.
+        """
+        # --- Inputs ---
+        output_dir = None
+        epoch = Time("2000-01-01 00:00:00", scale="tdb")
+        dynamic_state_algorithm = "algorithm_free_one_only_over_isls"
+
+        # Simulation Time Parameters (3 steps)
+        time_step_s = 1
+        duration_s = 3
+        offset_s = 0
+        time_step_ns = int(time_step_s * 1e9)
+        simulation_end_time_ns = int(duration_s * 1e9)  # Includes t=0, t=1s, t=2s
+        offset_ns = int(offset_s * 1e9)
+
+        # Max lengths
+        max_gsl_length_m = 1089686.4181956202
+        max_isl_length_m = 5016591.2330984278
+
+        # Use non-sequential IDs
+        SAT_A_ID = 10
+        SAT_B_ID = 20
+        SAT_C_ID = 30
+        SAT_D_ID = 40
+        GS_X_ID = 100
+        GS_Y_ID = 200
+        GS_Z_ID = 300
+        GS_W_ID = 400
+        sat_ids = [SAT_A_ID, SAT_B_ID, SAT_C_ID, SAT_D_ID]
+        gs_ids = [GS_X_ID, GS_Y_ID, GS_Z_ID, GS_W_ID]
+        all_node_ids = sat_ids + gs_ids
+
+        # Use valid TLEs from equator test
+        tle_data_orig = {  # Keyed by original sequential ID (0-3)
+            0: (
+                "Starlink-A",
+                "1 01308U 00000ABC 00001.00000000  .00000000  00000-0  00000+0 0    05",
+                "2 01308  53.0000 295.0000 0000001   0.0000 155.4545 15.19000000    04",
+            ),
+            1: (
+                "Starlink-B",
+                "1 01309U 00000ABC 00001.00000000  .00000000  00000-0  00000+0 0    06",
+                "2 01309  53.0000 295.0000 0000001   0.0000 171.8182 15.19000000    04",
+            ),
+            2: (
+                "Starlink-C",
+                "1 01310U 00000ABC 00001.00000000  .00000000  00000-0  00000+0 0    08",
+                "2 01310  53.0000 295.0000 0000001   0.0000 188.1818 15.19000000    03",
+            ),
+            3: (
+                "Starlink-D",
+                "1 01311U 00000ABC 00001.00000000  .00000000  00000-0  00000+0 0    09",
+                "2 01311  53.0000 295.0000 0000001   0.0000 204.5455 15.19000000    04",
+            ),
+        }
+        satellites = []
+        for i, new_id in enumerate(sat_ids):
+            tle_lines = tle_data_orig[i]
+            ephem_obj = ephem.readtle(*tle_lines)
+            satellites.append(
+                Satellite(id=new_id, ephem_obj_manual=ephem_obj, ephem_obj_direct=ephem_obj)
+            )
+
+        # Use same ground station location data, assign non-sequential IDs
+        gs_data_orig = [
+            {
+                "lat": "-8.836820",
+                "lon": "13.234320",
+                "elv": 0.0,
+                "x": 6135530.18,
+                "y": 1442953.50,
+                "z": -973332.34,
+                "name": "Luanda",
+            },
+            {
+                "lat": "6.453060",
+                "lon": "3.395830",
+                "elv": 0.0,
+                "x": 6326864.17,
+                "y": 375422.89,
+                "z": 712064.78,
+                "name": "Lagos",
+            },
+            {
+                "lat": "-4.327580",
+                "lon": "15.313570",
+                "elv": 0.0,
+                "x": 6134256.67,
+                "y": 1679704.40,
+                "z": -478073.16,
+                "name": "Kinshasa",
+            },
+            {
+                "lat": "24.690466",
+                "lon": "46.709566",
+                "elv": 0.0,
+                "x": 3975957.34,
+                "y": 4220595.03,
+                "z": 2647959.98,
+                "name": "Ar-Riyadh",
+            },
+        ]
+        ground_stations = []
+        for i, new_id in enumerate(gs_ids):
+            d = gs_data_orig[i]
+            ground_stations.append(
+                GroundStation(
+                    gid=new_id,
+                    name=d["name"],
+                    latitude_degrees_str=d["lat"],
+                    longitude_degrees_str=d["lon"],
+                    elevation_m_float=d["elv"],
+                    cartesian_x=d["x"],
+                    cartesian_y=d["y"],
+                    cartesian_z=d["z"],
+                )
+            )
+
+        constellation_data = ConstellationData(
+            orbits=1,
+            sats_per_orbit=len(satellites),
+            epoch="00001.00000000",
+            max_gsl_length_m=max_gsl_length_m,
+            max_isl_length_m=max_isl_length_m,
+            satellites=satellites,
+        )
+        undirected_isls = [(10, 20), (20, 30), (30, 40)]
+        list_gsl_interfaces_info = [
+            {"id": node_id, "number_of_interfaces": 1, "aggregate_max_bandwidth": 1.0}
+            for node_id in all_node_ids
+        ]
+
+        # --- Execute the Full Loop ---
+        final_state = generate_dynamic_state(
+            output_dynamic_state_dir=output_dir,
+            epoch=epoch,
+            simulation_end_time_ns=simulation_end_time_ns,
+            time_step_ns=time_step_ns,
+            offset_ns=offset_ns,
+            constellation_data=constellation_data,
+            ground_stations=ground_stations,
+            undirected_isls=undirected_isls,
+            list_gsl_interfaces_info=list_gsl_interfaces_info,
+            dynamic_state_algorithm=dynamic_state_algorithm,
+        )
+
+        # --- Assertions ---
+        self.assertIsNotNone(final_state, "generate_dynamic_state loop returned None")
+        self.assertIsInstance(final_state, dict, "Final state should be a dictionary")
+        self.assertIn("fstate", final_state)
+        self.assertIn("bandwidth", final_state)
+
+        # Check bandwidth state
+        expected_bandwidth = {node_id: 1.0 for node_id in all_node_ids}
+        self.assertDictEqual(
+            final_state["bandwidth"], expected_bandwidth, "Final bandwidth state mismatch"
+        )
+
+        # Check fstate is not empty
+        self.assertTrue(final_state["fstate"], "Final fstate dictionary is empty")
+
+        expected_final_fstate = {
+            (10, 100): (20, 0, 0),
+            (10, 200): (20, 0, 0),
+            (10, 300): (20, 0, 0),
+            (10, 400): (-1, -1, -1),
+            (20, 100): (30, 1, 0),
+            (20, 200): (200, 2, 0),
+            (20, 300): (30, 1, 0),
+            (20, 400): (-1, -1, -1),
+            (30, 100): (100, 2, 0),
+            (30, 200): (20, 0, 1),
+            (30, 300): (300, 2, 0),
+            (30, 400): (-1, -1, -1),
+            (40, 100): (30, 0, 1),
+            (40, 200): (30, 0, 1),
+            (40, 300): (30, 0, 1),
+            (40, 400): (-1, -1, -1),
+            (100, 200): (30, 0, 2),
+            (100, 300): (30, 0, 2),
+            (100, 400): (-1, -1, -1),
+            (200, 100): (20, 0, 2),
+            (200, 300): (20, 0, 2),
+            (200, 400): (-1, -1, -1),
+            (300, 100): (30, 0, 2),
+            (300, 200): (30, 0, 2),
+            (300, 400): (-1, -1, -1),
+            (400, 100): (-1, -1, -1),
+            (400, 200): (-1, -1, -1),
+            (400, 300): (-1, -1, -1),
+        }
+
+        self.maxDiff = None  # Show full diff on failure
+        self.assertDictEqual(
+            final_state["fstate"], expected_final_fstate, "Final fstate mismatch after loop"
         )
