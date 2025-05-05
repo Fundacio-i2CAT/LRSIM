@@ -25,7 +25,7 @@ log = logger.get_logger(__name__)
 
 
 def generate_dynamic_state(
-    output_dynamic_state_dir: str | None,  # Optional: For non-state output only
+    output_dynamic_state_dir: str | None,
     epoch: Time,
     simulation_end_time_ns: int,
     time_step_ns: int,
@@ -35,64 +35,63 @@ def generate_dynamic_state(
     undirected_isls: list,
     list_gsl_interfaces_info: list,
     dynamic_state_algorithm: str,
-) -> dict | None:
+) -> list[dict | None]:
     """
-    Generates dynamic state (bandwidth, forwarding) over a simulation period.
+    Generates dynamic state over a simulation period.
+    Returns a list containing the state calculated at each time step.
 
-    Iterates through time steps, calculates topology and visibility at each step,
-    and calls the specified dynamic state algorithm. State is passed between
-    time steps as Python objects. Verbosity is controlled by logger levels.
-
-    :param output_dynamic_state_dir: Directory for any non-state output files (e.g., logs). Can be None.
+    :param output_dynamic_state_dir: Directory for any non-state output files. Can be None.
     :param epoch: Astropy Time object representing the simulation epoch.
     :param simulation_end_time_ns: End time in nanoseconds since epoch (integer).
     :param time_step_ns: Simulation time step in nanoseconds (integer).
     :param offset_ns: Start time offset in nanoseconds since epoch (integer).
-    :param constellation_data: ConstellationData object holding satellite info, etc.
-                               NOTE: Assumes constellation_data.satellites provides access
-                                     to objects usable by LEOTopology.get_satellite.
+    :param constellation_data: ConstellationData object.
     :param ground_stations: List of GroundStation objects.
-    :param undirected_isls: List of predefined ISL pairs, e.g., [(sat_id_a, sat_id_b), ...].
-    :param list_gsl_interfaces_info: List of dictionaries defining GSL interface properties
-                                      (e.g., bandwidth) per node. Order should correspond
-                                      to satellites then ground stations if using index logic,
-                                      or contain 'id' field.
+    :param undirected_isls: List of predefined ISL pairs [(sat_id_a, sat_id_b), ...].
+    :param list_gsl_interfaces_info: List of dictionaries defining GSL interface properties.
     :param dynamic_state_algorithm: String identifier of the algorithm to use.
+    :return: List of state dictionaries (e.g., [{'fstate':..., 'bandwidth':...}, ...]),
+             one for each time step. Contains None for steps with errors.
     """
     if not isinstance(epoch, Time):
         raise TypeError("Epoch must be an astropy Time object.")
     if not all(isinstance(t, int) for t in [simulation_end_time_ns, time_step_ns, offset_ns]):
-        raise TypeError("Time parameters (end, step, offset) must be integers.")
+        raise TypeError("Time parameters must be integers.")
     if time_step_ns <= 0:
         log.error("time_step_ns must be positive.")
-        return  # Cannot proceed
+        return []
     if offset_ns % time_step_ns != 0:
         raise ValueError("Offset must be a multiple of time_step_ns")
 
-    prev_output = None
+    all_states = []  # **** ADDED: List to store state from each step ****
+    prev_output = None  # State from the *previous* step, passed to _at
+    current_step_state = None  # State calculated *in the current* step
     i = 0
-    total_iterations = (simulation_end_time_ns - offset_ns) / time_step_ns
 
-    # Calculate progress interval safely
-    if total_iterations > 0:
-        progress_interval = max(1, int(math.floor(total_iterations) / 10.0))
+    # --- Calculate iterations and progress interval ---
+    if time_step_ns <= 0:
+        total_iterations = 0
     else:
-        progress_interval = 1  # Default if no iterations or calculation error
-
+        total_iterations = math.floor(
+            (simulation_end_time_ns - offset_ns) / time_step_ns
+        )  # Use floor for accurate count
+    if total_iterations > 0:
+        progress_interval = max(1, int(math.floor(total_iterations / 10.0)))
+    else:
+        progress_interval = 1
     log.info(f"Starting dynamic state generation for {max(0, total_iterations):.0f} iterations.")
-
+    # --- Time Loop ---
     for time_since_epoch_ns in range(offset_ns, simulation_end_time_ns, time_step_ns):
-        # Log progress using logger (e.g., at INFO level)
         if i % progress_interval == 0:
             log.info(
                 "Progress: calculating for T=%d ns (step %d / %d)"
-                % (time_since_epoch_ns, i + 1, max(1, int(total_iterations)))
+                % (time_since_epoch_ns, i + 1, max(1, total_iterations))
             )
         i += 1
 
-        # Call the function that calculates state at a single time step
         try:
-            prev_output = generate_dynamic_state_at(
+            # Calculate state for the current time step, passing the previous state
+            current_step_state = generate_dynamic_state_at(
                 output_dynamic_state_dir,
                 epoch,
                 time_since_epoch_ns,
@@ -101,25 +100,26 @@ def generate_dynamic_state(
                 undirected_isls,
                 list_gsl_interfaces_info,
                 dynamic_state_algorithm,
-                prev_output,
+                prev_output, 
             )
-            # Handle case where _at returns None due to internal error
-            if prev_output is None:
+            all_states.append(current_step_state)  # **** ADDED: Append current state ****
+            if current_step_state is None:
                 log.error(
                     f"generate_dynamic_state_at returned None at t={time_since_epoch_ns} ns. Stopping."
                 )
                 break
+            # Update prev_output for the *next* iteration
+            prev_output = current_step_state
 
         except Exception:
             log.exception(
                 f"Unhandled error during dynamic state calculation at t={time_since_epoch_ns} ns. Stopping."
             )
-            # Re-raise or break depending on desired behavior
-            # raise e
-            break  # Stop processing further time steps
+            all_states.append(None)  # Append None to indicate error at this step
+            break
 
-    log.info("Dynamic state generation finished.")
-    return prev_output
+    log.info(f"Dynamic state generation finished. Generated {len(all_states)} states.")
+    return all_states
 
 
 def _compute_isls(

@@ -5,16 +5,24 @@ import argparse
 import os
 from astropy.time import Time
 
+# --- Import necessary classes and the REFFACTORED analysis function ---
+# Assume the analysis function is refactored and lives here:
+# from src.post_analysis.print_graphical_routes_and_rtt_refactored import print_graphical_routes_and_rtt_from_objects
 from src.dynamic_state.topology import (
     ConstellationData,
     GroundStation,
     Satellite,
-) 
+)  # Needed if passed to analysis
 
+# Import setup functions if needed to reload constellation/GS definitions
+# from src.ground_stations import read_ground_stations_basic # Example
+# from src.tles import read_tles # Example
 
+# Configure logging if needed
 from src import logger
 import logging
 
+log = logger.get_logger(__name__)
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)-7s] %(name)s: %(message)s"
 )
