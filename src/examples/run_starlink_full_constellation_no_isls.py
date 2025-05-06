@@ -1,22 +1,23 @@
 # run_full_starlink_example.py
 
-import math
-import ephem
-import pickle
-from astropy.time import Time
-from astropy import units as astro_units
-import os
 import logging
+import math
+import os
+import pickle
 import pprint
 import re  # For TLE parsing
+
+import ephem
+from astropy import units as astro_units
+from astropy.time import Time
 
 # Import necessary components from your src directory
 # Ensure these paths are correct relative to where you run the script
 try:
+    from src import logger
+    from src.distance_tools import geodetic2cartesian
     from src.dynamic_state.generate_dynamic_state import generate_dynamic_state
     from src.dynamic_state.topology import ConstellationData, GroundStation, Satellite
-    from src.distance_tools import geodetic2cartesian
-    from src import logger
 except ImportError as e:
     print(f"Error importing necessary modules: {e}")
     print("Please ensure your PYTHONPATH is set correctly or run from the project root.")

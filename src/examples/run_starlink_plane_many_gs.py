@@ -1,19 +1,21 @@
 # run_starlink_plane_example_many_gs.py
 
-import math
-import ephem
-import pickle
-from astropy.time import Time
-from astropy import units as astro_units
-import os
 import logging
+import math
+import os
+import pickle
 import pprint
+
+import ephem
+from astropy import units as astro_units
+from astropy.time import Time
+
+from src import logger
+from src.distance_tools import geodetic2cartesian
 
 # Import necessary components from your src directory
 from src.dynamic_state.generate_dynamic_state import generate_dynamic_state
 from src.dynamic_state.topology import ConstellationData, GroundStation, Satellite
-from src.distance_tools import geodetic2cartesian
-from src import logger
 
 # --- Configure Logging ---
 log = logger.get_logger(__name__)

@@ -2,12 +2,12 @@
 # FINAL VERSION with TLE fixes & Non-Sequential Test Update
 
 import math
-import unittest
 import pprint  # For printing the actual fstate nicely
+import unittest
 
 import ephem
-from astropy.time import Time
 from astropy import units as astro_units
+from astropy.time import Time
 
 # Modules and classes to test/use
 from src.dynamic_state.generate_dynamic_state import (

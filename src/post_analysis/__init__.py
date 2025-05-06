@@ -1,19 +1,18 @@
 # run_graphical_analysis.py (Example Structure)
 
-import pickle
 import argparse
+import logging
 import os
+import pickle
+
 from astropy.time import Time
 
+from src import logger
 from src.dynamic_state.topology import (
     ConstellationData,
     GroundStation,
     Satellite,
-) 
-
-
-from src import logger
-import logging
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)-7s] %(name)s: %(message)s"

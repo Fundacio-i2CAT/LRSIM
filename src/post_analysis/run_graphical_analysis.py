@@ -1,26 +1,28 @@
 # run_graphical_analysis.py (Example Structure)
 
-import pickle
 import argparse
+import logging
 import os
+import pickle
+
 from astropy.time import Time
+
+# Configure logging if needed
+from src import logger
 
 # --- Import necessary classes and the REFFACTORED analysis function ---
 # Assume the analysis function is refactored and lives here:
 # from src.post_analysis.print_graphical_routes_and_rtt_refactored import print_graphical_routes_and_rtt_from_objects
-from src.dynamic_state.topology import (
+from src.dynamic_state.topology import (  # Needed if passed to analysis
     ConstellationData,
     GroundStation,
     Satellite,
-)  # Needed if passed to analysis
+)
 
 # Import setup functions if needed to reload constellation/GS definitions
 # from src.ground_stations import read_ground_stations_basic # Example
 # from src.tles import read_tles # Example
 
-# Configure logging if needed
-from src import logger
-import logging
 
 log = logger.get_logger(__name__)
 logging.basicConfig(

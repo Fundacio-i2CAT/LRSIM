@@ -1,7 +1,8 @@
 # In tests/dynamic_state/test_generate_dynamic_state.py
 import unittest
-import networkx as nx
 from unittest.mock import MagicMock  # Or use a simple class with a .graph attribute
+
+import networkx as nx
 
 from src.dynamic_state.utils import graph as graph_utils
 
