@@ -432,3 +432,91 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
                 # False,                  # REMOVE THIS ARGUMENT (enable_verbose_logs)
             )
         self.assertIn("Offset must be a multiple of time_step_ns", str(cm.exception))
+
+    def test_generate_dynamic_state_skips_calc_on_equal_topo(
+        self,
+    ):
+        """
+        Test that generate_dynamic_state loop skips calling the algorithm
+        when _topologies_are_equal returns True (using context managers).
+        """
+        output_dir = "/fake/skip/dir"
+        # Simulate 3 time steps: t=0, t=1, t=2
+        simulation_end_time_ns = 3 * 1_000_000_000
+        time_step_ns = 1 * 1_000_000_000
+        offset_ns = 0
+        algo_name = (
+            "algorithm_free_one_only_over_isls"  # Ensure this matches the patched function name
+        )
+        state_t0 = {"fstate": {"id": "state_t0"}, "bandwidth": {"node": 1.0}}
+        state_t2 = {"fstate": {"id": "state_t2"}, "bandwidth": {"node": 1.0}}  # Different state
+        mock_topo_t0 = MagicMock(name="TopoT0")
+        mock_topo_t1 = MagicMock(name="TopoT1")  # Assume same as T0 for test
+        mock_topo_t2 = MagicMock(name="TopoT2")  # Assume different from T1
+
+        # Patch the topology comparison function at its source location
+        with patch(
+            "src.dynamic_state.utils.graph._topologies_are_equal"
+        ) as mock_topologies_equal, patch(
+            f"src.dynamic_state.generate_dynamic_state.{algo_name}"
+        ) as mock_algorithm_func, patch(
+            "src.dynamic_state.generate_dynamic_state._build_topologies"
+        ) as mock_build, patch(
+            "src.dynamic_state.generate_dynamic_state._compute_isls"
+        ) as mock_isls, patch(
+            "src.dynamic_state.generate_dynamic_state._compute_ground_station_satellites_in_range"
+        ) as mock_gsl:
+            # Configure the mock for _topologies_are_equal
+            mock_topologies_equal.side_effect = [
+                False,  # Call 1 (t=0): Comparing None, T0 -> Returns False
+                True,  # Call 2 (t=1): Comparing T0, T1 -> Returns True (REUSE state)
+                False,  # Call 3 (t=2): Comparing T1, T2 -> Returns False (CALC state)
+            ]
+            # Configure the mock for the algorithm function
+            mock_algorithm_func.side_effect = [
+                state_t0,  # Return value when called for t=0 (because call 1 -> False)
+                state_t2,  # Return value when called for t=2 (because call 3 -> False)
+            ]
+            # Configure _build_topologies
+            mock_build.side_effect = [
+                (mock_topo_t0, MagicMock()),  # For t=0
+                (mock_topo_t1, MagicMock()),  # For t=1
+                (mock_topo_t2, MagicMock()),  # For t=2
+            ]
+            # Configure other mocks
+            mock_isls.return_value = None
+            mock_gsl.return_value = []
+            final_states = generate_dynamic_state.generate_dynamic_state(
+                output_dir,
+                self.mock_astropy_epoch,  # From setUp
+                simulation_end_time_ns,
+                time_step_ns,
+                offset_ns,
+                self.constellation_data,  # From setUp
+                self.ground_stations,  # From setUp
+                self.undirected_isls,  # From setUp
+                self.list_gsl_interfaces_info,  # From setUp
+                algo_name,
+            )
+        # Verify _topologies_are_equal was called correctly
+        self.assertEqual(mock_topologies_equal.call_count, 3)  # <--- EXPECT 3 CALLS
+        mock_topologies_equal.assert_has_calls(
+            [
+                call(None, mock_topo_t0),  # Call at t=0 (No weight_tolerance)
+                call(mock_topo_t0, mock_topo_t1),  # Call at t=1 (No weight_tolerance)
+                call(mock_topo_t1, mock_topo_t2),  # Call at t=2 (No weight_tolerance)
+            ],
+            any_order=False,  # Ensure the order is correct
+        )
+        self.assertEqual(mock_algorithm_func.call_count, 2)  # <--- EXPECT 2 CALLS!
+        first_call_args = mock_algorithm_func.call_args_list[0]
+        second_call_args = mock_algorithm_func.call_args_list[1]
+        self.assertEqual(first_call_args.kwargs["time_since_epoch_ns"], 0)
+        self.assertEqual(second_call_args.kwargs["time_since_epoch_ns"], 2_000_000_000)
+        self.assertEqual(len(final_states), 3)
+        self.assertEqual(final_states[0]["fstate"], state_t0["fstate"])
+        self.assertEqual(final_states[0]["time_since_epoch_ns"], 0)
+        self.assertEqual(final_states[1]["fstate"], state_t0["fstate"])  # Reused
+        self.assertEqual(final_states[1]["time_since_epoch_ns"], 1_000_000_000)
+        self.assertEqual(final_states[2]["fstate"], state_t2["fstate"])  # Recalculated
+        self.assertEqual(final_states[2]["time_since_epoch_ns"], 2_000_000_000)
