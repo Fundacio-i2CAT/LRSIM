@@ -1,0 +1,24 @@
+constellation_name: "My Orbits Visualization"
+epoch: "2024-05-19 12:00:00" # Epoch for instantaneous positions & TLE track start
+
+shells:
+  - name: "LEO Reference Shell"
+    num_orbs: 1
+    num_sats_per_orb: 1
+    inclination_degree: 53.0
+    mean_motion_rev_per_day: 15.19 # ~550km
+    altitude_m: 550000
+    color: "STEELBLUE" # Color for the links between these sats
+
+tle_files:
+  - path: "tles/starlink_sgp.txt"  # Path relative to this YAML file
+    orbit_color: "ORANGE"
+    satellite_marker_color: "RED"
+    satellite_marker_size: 5
+    name_prefix: "StarlinkTLE"
+
+ground_stations:
+  - name: "My Ground Base"
+    latitude: 40.0
+    longitude: -3.0
+    color: "DODGERBLUE"
