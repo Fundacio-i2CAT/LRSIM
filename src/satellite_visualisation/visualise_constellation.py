@@ -9,10 +9,10 @@ import ephem  # For TLE parsing and propagation
 log = logger.get_logger(__name__)
 
 try:
-    from . import util
+    from .cesium_builder import util
 except (ImportError, SystemError):
     try:
-        import util
+        import src.satellite_visualisation.cesium_builder.util as util
     except ImportError:
         log.critical(
             "CRITICAL: Could not import the 'util' module. "
