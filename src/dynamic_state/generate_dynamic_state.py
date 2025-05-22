@@ -12,13 +12,10 @@ from astropy.time import Time
 from src import distance_tools, logger
 
 # Import necessary classes from topology module
-from src.dynamic_state.topology import ConstellationData, GroundStation, LEOTopology, Satellite
+from src.topology.topology import ConstellationData, GroundStation, LEOTopology, Satellite
 
 # Import the specific algorithm function(s) needed
 from .algorithm_free_one_only_over_isls import algorithm_free_one_only_over_isls
-
-# Import the refactored fstate calculation helper (needed by the algorithm)
-# Ensure this import path is correct relative to generate_dynamic_state.py
 from .fstate_calculation import calculate_fstate_shortest_path_object_no_gs_relay
 from .utils import graph as graph_utils
 
