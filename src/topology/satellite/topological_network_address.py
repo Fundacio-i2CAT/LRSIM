@@ -159,4 +159,3 @@ class TopologicalNetworkAddress:
     def __str__(self) -> str:
         kind = "Sat" if self.is_satellite else f"GS[{self.subnet_index}]"
         return f"TopoAddr(sh:{self.shell_id}, o:{self.plane_id}, s:{self.sat_index}, x:{kind})"
-Satellite(
