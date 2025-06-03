@@ -1,5 +1,14 @@
 import unittest
 from unittest.mock import MagicMock, call, patch
+
+import ephem
+import networkx as nx
+from astropy import units as astro_units
+
+# Use a fixed time for reproducibility instead of relying on current time
+from astropy.time import Time
+
+from src import logger
 from src.network_state import generate_network_state
 from src.network_state.helpers import (
     _compute_isls,
@@ -10,14 +19,6 @@ from src.topology.topology import (
     GroundStation,
     LEOTopology,
 )
-import ephem
-import networkx as nx
-from astropy import units as astro_units
-
-# Use a fixed time for reproducibility instead of relying on current time
-from astropy.time import Time
-
-from src import logger
 
 log = logger.get_logger(__name__)
 
