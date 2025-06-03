@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from src import logger
 
 log = logger.get_logger(__name__)
