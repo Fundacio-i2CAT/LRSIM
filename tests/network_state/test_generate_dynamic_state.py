@@ -330,8 +330,7 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         """Test ValueError is raised for an unknown algorithm name."""
         with self.assertRaises(ValueError) as cm:
             # This call might produce log output before raising the error
-            generate_network_state.generate_dynamic_state_at(
-                "/fake/dir",
+            generate_network_state._generate_state_for_step(
                 self.mock_astropy_epoch,
                 self.time_since_epoch_ns,
                 self.constellation_data,
@@ -340,15 +339,13 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
                 self.list_gsl_interfaces_info,
                 "bad_algorithm",
                 None,
-                None,  # Add prev_topology argument
+                None, 
             )
         self.assertIn("Unknown dynamic state algorithm: bad_algorithm", str(cm.exception))
 
-    @patch("src.network_state.generate_network_state.generate_dynamic_state_at")
+    @patch("src.network_state.generate_network_state._generate_state_for_step")
     def test_generate_dynamic_state_loop(self, mock_generate_at):
-        """Test the main loop calls generate_dynamic_state_at correctly."""
-        output_dir = "/fake/loop/dir"
-
+        """Test the main loop calls _generate_state_for_step correctly."""
         simulation_end_time_ns = 3 * 1_000_000_000
         time_step_ns = 1 * 1_000_000_000
         offset_ns = 1 * 1_000_000_000
@@ -364,7 +361,6 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         ]
 
         generate_network_state.generate_dynamic_state(
-            output_dir,
             self.mock_astropy_epoch,
             simulation_end_time_ns,
             time_step_ns,
@@ -379,7 +375,6 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         calls = [
             # Call for t=1e9 (offset)
             call(
-                output_dynamic_state_dir=output_dir,
                 epoch=self.mock_astropy_epoch,
                 time_since_epoch_ns=offset_ns,  # t=1e9
                 constellation_data=self.constellation_data,
@@ -392,7 +387,6 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
             ),
             # Call for t=2e9
             call(
-                output_dynamic_state_dir=output_dir,
                 epoch=self.mock_astropy_epoch,
                 time_since_epoch_ns=offset_ns + time_step_ns,  # t=2e9
                 constellation_data=self.constellation_data,
@@ -411,7 +405,6 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         """Test ValueError if offset is not a multiple of time_step_ns."""
         with self.assertRaises(ValueError) as cm:
             generate_network_state.generate_dynamic_state(
-                "/fake",
                 self.mock_astropy_epoch,
                 1000,  # end time (int)
                 100,  # step (int)
@@ -434,7 +427,6 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
         Test that generate_dynamic_state loop skips calling the algorithm
         when _topologies_are_equal returns True (using context managers).
         """
-        output_dir = "/fake/skip/dir"
         # Simulate 3 time steps: t=0, t=1, t=2
         simulation_end_time_ns = 3 * 1_000_000_000
         time_step_ns = 1 * 1_000_000_000
@@ -481,7 +473,6 @@ class TestDynamicStateGeneratorUpdated(unittest.TestCase):
             mock_isls.return_value = None
             mock_gsl.return_value = []
             final_states = generate_network_state.generate_dynamic_state(
-                output_dir,
                 self.mock_astropy_epoch,  # From setUp
                 simulation_end_time_ns,
                 time_step_ns,
