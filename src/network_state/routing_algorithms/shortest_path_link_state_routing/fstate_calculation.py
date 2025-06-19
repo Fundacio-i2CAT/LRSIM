@@ -179,7 +179,6 @@ def _get_next_hop_decision(
         dst_sat_idx = node_to_index.get(dst_sat_id)
         if dst_sat_idx is None:
             return next_hop_decision, distance_to_ground_station_m
-
         if curr_sat_id != dst_sat_id:
             next_hop_decision = _handle_multihop_path(
                 curr_sat_id,
@@ -193,7 +192,6 @@ def _get_next_hop_decision(
             next_hop_decision = _handle_direct_gs_path(
                 dst_sat_id, dst_gs_node_id, topology_with_isls
             )
-
     return next_hop_decision, distance_to_ground_station_m
 
 
@@ -247,9 +245,10 @@ def _handle_direct_gs_path(
     """
     try:
         dst_satellite = topology_with_isls.get_satellite(dst_sat_id)
-        num_isls_dst_sat = dst_satellite.number_isls
-        my_gsl_if = num_isls_dst_sat
-        next_hop_gsl_if = 0
+        my_gsl_if = (
+            dst_satellite.number_isls
+        )  # satellite's GSL interface is assigned the next available interface ID after all ISL interfaces
+        next_hop_gsl_if = 0  # Ground stations have a single interface (interface 0)
         return (dst_gs_node_id, my_gsl_if, next_hop_gsl_if)
     except KeyError:
         log.error(f"Could not find satellite object {dst_sat_id} for GS exit hop.")
@@ -264,46 +263,112 @@ def _calculate_gs_to_gs_fstate(
     dist_satellite_to_ground_station: Dict[Tuple[int, int], float],
     fstate: Dict[Tuple[int, int], Tuple[int, int, int]],
 ) -> None:
+    """
+    Calculate forwarding state for ground station to ground station communication.
+
+    For each pair of ground stations, identifies the optimal path through the satellite
+    constellation by:
+    1. Finding satellites visible to the source ground station
+    2. Determining which satellite provides the shortest end-to-end path to destination
+    3. Configuring appropriate interface IDs for packet forwarding
+
+    Args:
+        topology_with_isls: Complete network topology
+        ground_stations: List of all ground stations
+        ground_station_satellites_in_range: Visibility information between ground stations and satellites
+        node_to_index: Mapping of node IDs to matrix indices
+        dist_satellite_to_ground_station: Precomputed distances from satellites to ground stations
+        fstate: Forwarding state dictionary to be updated
+
+    Returns:
+        None: Updates the fstate dictionary in-place
+    """
     for src_idx, src_gs in enumerate(ground_stations):
         src_gs_node_id = src_gs.id
         for dst_idx, dst_gs in enumerate(ground_stations):
-            if src_idx == dst_idx:
-                continue
             dst_gs_node_id = dst_gs.id
-
-            if src_idx >= len(ground_station_satellites_in_range):
-                log.warning(
-                    f"Index {src_idx} out of bounds for ground_station_satellites_in_range. Skipping GS {src_gs_node_id}."
-                )
+            if src_gs_node_id == dst_gs_node_id:  # Skip self-connections
                 continue
-            possible_src_sats = ground_station_satellites_in_range[src_idx]
-            possibilities = []
-            for visibility_info in possible_src_sats:
-                dist_gs_to_sat_m, entry_sat_id = visibility_info
-
-                if entry_sat_id in node_to_index:
-                    dist_entry_sat_to_dst_gs = dist_satellite_to_ground_station.get(
-                        (entry_sat_id, dst_gs_node_id), float("inf")
-                    )
-
-                    if not math.isinf(dist_entry_sat_to_dst_gs):
-                        total_dist = dist_gs_to_sat_m + dist_entry_sat_to_dst_gs
-                        possibilities.append((total_dist, entry_sat_id))
-
-            possibilities.sort()
-
-            next_hop_decision = (-1, -1, -1)
-            if possibilities:
-                _, src_sat_id = possibilities[0]
-
-                try:
-                    entry_satellite = topology_with_isls.get_satellite(src_sat_id)
-                    num_isls_entry_sat = entry_satellite.number_isls
-                    my_gsl_if = 0
-                    next_hop_gsl_if = num_isls_entry_sat
-                    next_hop_decision = (src_sat_id, my_gsl_if, next_hop_gsl_if)
-                except (KeyError, IndexError):
-                    log.error(f"Could not find satellite object {src_sat_id} for GS->Sat hop.")
-                    next_hop_decision = (-1, -1, -1)
-
+            best_path_among_possibles = _find_gs_to_gs_path_possibilities(
+                src_idx,
+                dst_gs_node_id,
+                ground_station_satellites_in_range,
+                dist_satellite_to_ground_station,
+            )
+            next_hop_decision = _select_best_gs_to_gs_path(
+                best_path_among_possibles, topology_with_isls
+            )
             fstate[(src_gs_node_id, dst_gs_node_id)] = next_hop_decision
+
+
+def _find_gs_to_gs_path_possibilities(
+    src_idx: int,
+    dst_gs_node_id: int,
+    ground_station_satellites_in_range: List[List[Tuple[float, int]]],
+    dist_satellite_to_ground_station: Dict[Tuple[int, int], float],
+) -> List[Tuple[float, int]]:
+    """
+    Find all possible paths from source ground station to destination ground station.
+
+    Args:
+        src_idx: Index of the source ground station
+        dst_gs_node_id: ID of the destination ground station
+        ground_station_satellites_in_range: Visibility information between ground stations and satellites
+        dist_satellite_to_ground_station: Precomputed distances from satellites to ground stations
+
+    Returns:
+        List of tuples (total_distance, satellite_id) sorted by distance (shortest first)
+    """
+    possibilities: List[Tuple[float, int]] = []
+    if src_idx >= len(ground_station_satellites_in_range):  # check if src gs idx is ok
+        log.warning(f"Source ground station index {src_idx} out of range")
+        return possibilities
+    visible_satellites_from_src_gs = ground_station_satellites_in_range[src_idx]
+    # For each visible satellite, calculate total path distance to destination
+    for dist_gs_to_sat_m, src_sat_id in visible_satellites_from_src_gs:
+        # Check if we have distance data to the destination
+        if (src_sat_id, dst_gs_node_id) in dist_satellite_to_ground_station:
+            dist_sat_to_dst_gs_m = dist_satellite_to_ground_station[(src_sat_id, dst_gs_node_id)]
+            if not math.isinf(dist_sat_to_dst_gs_m):  # if valid path exists (not infinite)
+                total_dist_m = dist_gs_to_sat_m + dist_sat_to_dst_gs_m
+                possibilities.append((total_dist_m, src_sat_id))
+    possibilities.sort()
+    return possibilities
+
+
+def _select_best_gs_to_gs_path(
+    possibilities: List[Tuple[float, int]], topology_with_isls: LEOTopology
+) -> Tuple[int, int, int]:
+    """
+    Select the best path from the list of possibilities and configure interfaces.
+
+    Args:
+        possibilities: List of tuples (total_distance, satellite_id) sorted by distance
+        topology_with_isls: Complete network topology
+
+    Returns:
+        Tuple[int, int, int]: Next hop decision (satellite_id, gs_interface, satellite_interface)
+    """
+    # Default return value if no path is found
+    next_hop_decision = (-1, -1, -1)
+
+    if possibilities:
+        # Get the best (shortest) path
+        _, src_sat_id = possibilities[0]
+
+        try:
+            # Configure interface IDs
+            src_satellite = topology_with_isls.get_satellite(src_sat_id)
+            num_isls_entry_sat = src_satellite.number_isls
+
+            # Ground station uses interface 0, satellite uses its GSL interface
+            # (which follows after all its ISL interfaces)
+            my_gsl_if = 0
+            next_hop_gsl_if = num_isls_entry_sat
+
+            next_hop_decision = (src_sat_id, my_gsl_if, next_hop_gsl_if)
+
+        except KeyError as e:
+            log.error(f"Could not find satellite {src_sat_id} for GS-GS path: {e}")
+
+    return next_hop_decision
