@@ -45,7 +45,6 @@ This tool enables researchers and engineers to study network dynamics, routing p
     - [Adding New Features](#adding-new-features)
   - [Copyright](#copyright)
   - [License](#license)
-    - [Citation and Attribution](#citation-and-attribution)
   - [Acknowledgements](#acknowledgements)
   - [Attributions](#attributions)
   - [Contact](#contact)
@@ -527,28 +526,13 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 This code is licensed under the terms of the AGPL. Information about the license can be located at <https://www.gnu.org/licenses/agpl-3.0.html>.
 
-The AGPL-3.0 license ensures that:
-- The source code remains open and available to the community
-- Any modifications or derivative works must also be open-sourced under AGPL-3.0
-- If you run a modified version on a server (e.g., as a web service), you must make the source code available to users
-
 This strong copyleft license was chosen to ensure that improvements to satellite network routing research remain accessible to the broader research community.
 
-### Citation and Attribution
-
-**Please refer to FlexStack Community Edition as a dependency of your works.**
-
-If you find that this license doesn't fit with your requirements regarding the use, distribution or redistribution of our code for your specific work, please don't hesitate to contact the intellectual property managers in i2CAT at the following address: **techtransfer@i2cat.net**
-
-Also, in the following page you'll find more information about the current commercialization status or other licensees: Under Development.
+If you find that this license doesn't fit with your requirements regarding the use, distribution or redistribution of our code for your specific work, please, don’t hesitate to contact the intellectual property managers in i2CAT at the following address: techtransfer@i2cat.net Also, in the following page you’ll find more information about the current commercialization status or other licensees: Under Development.
 
 ## Acknowledgements
 
-This project is part of ongoing PhD research in satellite network routing optimization and next-generation satellite communication systems.
-
-**Inspired By**:
-
-This simulator is heavily inspired by the excellent [**Hypatia**](https://github.com/snkas/hypatia) simulator developed by Simon Kassing and others. Hypatia provides a comprehensive framework for simulating LEO satellite networks, and many of the core concepts, architectural patterns, and simulation methodologies used in this project are adapted from Hypatia's design. We are grateful to the Hypatia team for their pioneering work in open-source satellite network simulation.
+This simulator is heavily inspired by [**Hypatia**](https://github.com/snkas/hypatia). Hypatia provides a comprehensive framework for simulating LEO satellite networks, and many of the core concepts, architectural patterns, and simulation methodologies used in this project are adapted from Hypatia's design.
 
 **Key Technologies**:
 - [SGP4](https://pypi.org/project/sgp4/) - Satellite orbit propagation
@@ -556,10 +540,6 @@ This simulator is heavily inspired by the excellent [**Hypatia**](https://github
 - [Cesium](https://cesium.com/) - 3D geospatial visualization
 - [NetworkX](https://networkx.org/) - Graph algorithms and network analysis
 - [Hypatia](https://github.com/snkas/hypatia) - LEO satellite network simulator (inspiration and foundation)
-
-**Related Research**:
-- [6G-RUPA Project](https://6grupa.com) - 6G Research Platform for Network Architecture
-- [Hypatia: Network Topology Design and Packet-level Simulation for LEO Satellites](https://github.com/snkas/hypatia)
 
 ## Attributions
 
@@ -584,6 +564,3 @@ Attributions of Third Party Components of this work:
 - **Project Maintainer**: Sergio Giménez
 - **Email**: sergio.gimenez@i2cat.net
 
----
-
-**Note**: This is an active research project. Features and APIs may change as the project evolves. Please check the [CHANGELOG](CHANGELOG.md) for updates.
