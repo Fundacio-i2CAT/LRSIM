@@ -3,6 +3,7 @@
 <img src="i2cat_logo.png" alt="i2CAT Logo" width="150"/>
 <img src="leopath_logo.png" alt="LEOPath Logo" width="450"/>
 
+[![PyPI](https://img.shields.io/pypi/v/leopath.svg)](https://pypi.org/project/leopath/)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -109,7 +110,15 @@ The `run-simulations.sh` script handles all Docker operations automatically. You
 
 ## Installation
 
-### Using Docker (Recommended)
+### From PyPI (Recommended for usage)
+
+You can install LEOPath directly from PyPI:
+
+```bash
+pip install leopath
+```
+
+### Using Docker (Recommended for simulations)
 
 The easiest way to run simulations is using the `run-simulations.sh` convenience script, which handles Docker operations automatically:
 

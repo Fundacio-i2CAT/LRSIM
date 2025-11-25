@@ -28,6 +28,7 @@ leopath = "leopath.main:main"
 [project.urls]
 "Homepage" = "https://github.com/Fundacio-i2CAT/LEOPath"
 "Bug Tracker" = "https://github.com/Fundacio-i2CAT/LEOPath/issues"
+"PyPI" = "https://pypi.org/project/leopath/"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
