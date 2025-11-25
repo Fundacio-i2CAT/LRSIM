@@ -52,6 +52,7 @@ build-docker-image:
   tags:
     - SN-runner # Ensure this job runs on a runner that can execute Docker/Kaniko
   cache: {} # Disable default cache inherited from 'default' key, as it's not relevant for this job
+  before_script: [] # Disable default before_script as Kaniko image doesn't have apt-get/pip
   script:
     - |
       # Determine Docker image destination tag based on the pipeline context
