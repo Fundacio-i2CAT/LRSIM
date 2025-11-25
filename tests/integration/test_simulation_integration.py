@@ -9,15 +9,15 @@ from pathlib import Path
 
 class TestMainSimulationIntegration(unittest.TestCase):
     """Integration test for the main simulation pipeline.
-    
+
     This test validates that the entire simulation can be executed end-to-end
     with a minimal but valid constellation configuration. It ensures:
-    
+
     1. The main.py can be executed as a subprocess
     2. All simulation components work together correctly
     3. Expected outputs (logs, TLE files) are generated
     4. The simulation completes successfully
-    
+
     The test uses a minimal constellation (3 orbits, 3 satellites per orbit)
     which is the minimum required for the plus grid ISL topology.
     """
@@ -92,7 +92,7 @@ class TestMainSimulationIntegration(unittest.TestCase):
             # Run the simulation with proper Python path
             env = os.environ.copy()
             env['PYTHONPATH'] = str(self.project_root)
-            
+
             cmd = [
                 sys.executable,
                 str(self.main_py_path),
@@ -165,7 +165,7 @@ class TestMainSimulationIntegration(unittest.TestCase):
             # Run the simulation with proper Python path
             env = os.environ.copy()
             env['PYTHONPATH'] = str(self.project_root)
-            
+
             cmd = [
                 sys.executable,
                 str(self.main_py_path),
@@ -201,7 +201,7 @@ class TestMainSimulationIntegration(unittest.TestCase):
         # Run with non-existent config file
         env = os.environ.copy()
         env['PYTHONPATH'] = str(self.project_root)
-        
+
         cmd = [
             sys.executable,
             str(self.main_py_path),

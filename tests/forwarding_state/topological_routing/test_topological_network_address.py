@@ -21,19 +21,19 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
             (64, 0, 1, 0),   # First satellite in second plane (assuming 64 sats per plane)
             (65, 0, 1, 1),   # Second satellite in second plane
         ]
-        
+
         for sat_id, expected_shell, expected_plane, expected_sat_idx in test_cases:
             with self.subTest(sat_id=sat_id):
                 addr = TopologicalNetworkAddress.set_address_from_orbital_parameters(sat_id)
-                
-                self.assertEqual(addr.shell_id, expected_shell, 
-                               f"Incorrect shell_id for satellite {sat_id}")
-                self.assertEqual(addr.plane_id, expected_plane, 
-                               f"Incorrect plane_id for satellite {sat_id}")
-                self.assertEqual(addr.sat_index, expected_sat_idx, 
-                               f"Incorrect sat_index for satellite {sat_id}")
-                self.assertEqual(addr.subnet_index, 0, 
-                               f"Satellites should have subnet_index=0 for satellite {sat_id}")
+
+                self.assertEqual(addr.shell_id, expected_shell,
+                                 f"Incorrect shell_id for satellite {sat_id}")
+                self.assertEqual(addr.plane_id, expected_plane,
+                                 f"Incorrect plane_id for satellite {sat_id}")
+                self.assertEqual(addr.sat_index, expected_sat_idx,
+                                 f"Incorrect sat_index for satellite {sat_id}")
+                self.assertEqual(addr.subnet_index, 0,
+                                 f"Satellites should have subnet_index=0 for satellite {sat_id}")
 
     def test_satellite_vs_ground_station_properties(self):
         """Test the is_satellite and is_ground_station properties."""
@@ -43,7 +43,7 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
         )
         self.assertTrue(sat_addr.is_satellite)
         self.assertFalse(sat_addr.is_ground_station)
-        
+
         # Test ground station address (subnet_index > 0)
         gs_addr = TopologicalNetworkAddress(
             shell_id=0, plane_id=1, sat_index=10, subnet_index=5
@@ -58,7 +58,7 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
             shell_id=0, plane_id=2, sat_index=15, subnet_index=0
         )
         self.assertEqual(sat_addr.get_satellite_address(), sat_addr)
-        
+
         # Test with ground station address (should return satellite part)
         gs_addr = TopologicalNetworkAddress(
             shell_id=0, plane_id=2, sat_index=15, subnet_index=7
@@ -78,7 +78,7 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
             TopologicalNetworkAddress(0, 0, 0, 5),
             TopologicalNetworkAddress(1, 2, 3, 4),
         ]
-        
+
         for addr in test_addresses:
             with self.subTest(addr=addr):
                 integer_repr = addr.to_integer()
@@ -88,13 +88,13 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
     def test_from_integer_conversion(self):
         """Test conversion from integer representation."""
         test_integers = [0, 1, 32, 64, 1000, 2048, 4096]
-        
+
         for integer_val in test_integers:
             with self.subTest(integer_val=integer_val):
                 try:
                     addr = TopologicalNetworkAddress.from_integer(integer_val)
                     self.assertIsInstance(addr, TopologicalNetworkAddress)
-                    
+
                     # Verify components are within valid ranges
                     self.assertGreaterEqual(addr.shell_id, 0)
                     self.assertGreaterEqual(addr.plane_id, 0)
@@ -114,13 +114,13 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
             TopologicalNetworkAddress(0, 5, 10, 0),
             TopologicalNetworkAddress(0, 10, 20, 5),
         ]
-        
+
         for original_addr in test_addresses:
             with self.subTest(addr=original_addr):
                 # Convert to integer and back
                 integer_repr = original_addr.to_integer()
                 reconstructed_addr = TopologicalNetworkAddress.from_integer(integer_repr)
-                
+
                 # Should be identical
                 self.assertEqual(original_addr, reconstructed_addr)
 
@@ -128,22 +128,22 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
         """Test that satellite ID mapping is consistent and deterministic."""
         # Test a range of satellite IDs
         sat_ids = [0, 1, 10, 50, 100, 200, 500]
-        
+
         for sat_id in sat_ids:
             with self.subTest(sat_id=sat_id):
                 # Generate address twice - should be identical
                 addr1 = TopologicalNetworkAddress.set_address_from_orbital_parameters(sat_id)
                 addr2 = TopologicalNetworkAddress.set_address_from_orbital_parameters(sat_id)
-                
-                self.assertEqual(addr1, addr2, 
-                               f"Address generation not deterministic for satellite {sat_id}")
-                
+
+                self.assertEqual(addr1, addr2,
+                                 f"Address generation not deterministic for satellite {sat_id}")
+
                 # Test round-trip through integer conversion
                 integer_repr = addr1.to_integer()
                 reconstructed = TopologicalNetworkAddress.from_integer(integer_repr)
-                
-                self.assertEqual(addr1, reconstructed, 
-                               f"Round-trip conversion failed for satellite {sat_id}")
+
+                self.assertEqual(addr1, reconstructed,
+                                 f"Round-trip conversion failed for satellite {sat_id}")
 
     def test_address_ordering_by_satellite_id(self):
         """Test that satellites with sequential IDs get reasonable address distribution."""
@@ -152,12 +152,12 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
         for sat_id in range(20):
             addr = TopologicalNetworkAddress.set_address_from_orbital_parameters(sat_id)
             addresses.append((sat_id, addr))
-        
+
         # Verify all are satellite addresses
         for sat_id, addr in addresses:
             self.assertTrue(addr.is_satellite, f"Satellite {sat_id} should have satellite address")
             self.assertEqual(addr.shell_id, 0, f"Should use single shell for satellite {sat_id}")
-        
+
         # Verify addresses are distinct
         addr_set = set(addr for _, addr in addresses)
         self.assertEqual(len(addr_set), len(addresses), "All satellite addresses should be unique")
@@ -171,7 +171,7 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
         self.assertIn("sh:0", str_repr)
         self.assertIn("o:1", str_repr)
         self.assertIn("s:5", str_repr)
-        
+
         # Test ground station address
         gs_addr = TopologicalNetworkAddress(0, 1, 5, 3)
         str_repr = str(gs_addr)
@@ -185,15 +185,15 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
         # Valid address should work
         valid_addr = TopologicalNetworkAddress(0, 1, 2, 0)
         self.assertIsInstance(valid_addr, TopologicalNetworkAddress)
-        
+
         # Test invalid shell_id
         with self.assertRaises(ValueError):
             TopologicalNetworkAddress(-1, 0, 0, 0)
-        
+
         # Test invalid plane_id
         with self.assertRaises(ValueError):
             TopologicalNetworkAddress(0, -1, 0, 0)
-        
+
         # Test invalid subnet_index
         with self.assertRaises(ValueError):
             TopologicalNetworkAddress(0, 0, 0, -1)
@@ -202,27 +202,27 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
         """Test handling of large satellite IDs that might require multiple shells."""
         # Test some larger satellite IDs
         large_sat_ids = [1000, 5000, 10000]
-        
+
         for sat_id in large_sat_ids:
             with self.subTest(sat_id=sat_id):
                 try:
                     addr = TopologicalNetworkAddress.set_address_from_orbital_parameters(sat_id)
-                    
+
                     # Should be a valid satellite address
                     self.assertTrue(addr.is_satellite)
                     self.assertGreaterEqual(addr.shell_id, 0)
                     self.assertGreaterEqual(addr.plane_id, 0)
                     self.assertGreaterEqual(addr.sat_index, 0)
-                    
+
                     # Test round-trip conversion
                     integer_repr = addr.to_integer()
                     reconstructed = TopologicalNetworkAddress.from_integer(integer_repr)
                     self.assertEqual(addr, reconstructed)
-                    
+
                 except ValueError as e:
                     # May exceed maximum address space - this is acceptable
-                    self.assertIn("exceeds", str(e).lower(), 
-                                f"Unexpected error for satellite {sat_id}: {e}")
+                    self.assertIn("exceeds", str(e).lower(),
+                                  f"Unexpected error for satellite {sat_id}: {e}")
 
 
 if __name__ == "__main__":

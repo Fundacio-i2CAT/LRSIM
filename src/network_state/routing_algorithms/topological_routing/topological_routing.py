@@ -1,8 +1,8 @@
-from astropy.time import Time
 from astropy import units as astro_units
+from astropy.time import Time
 
-from src.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
 from src.network_state.gsl_attachment.gsl_attachment_factory import GSLAttachmentFactory
+from src.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
 from src.topology.topology import ConstellationData, GroundStation, LEOTopology
 
 from .algorithm_topological_routing import algorithm_topological_routing

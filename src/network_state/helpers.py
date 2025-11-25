@@ -123,9 +123,7 @@ def _build_topologies(orbital_data: ConstellationData, ground_stations: list[Gro
     for gs in ground_stations:
         topology_with_isls.graph.add_node(gs.id)  # Add GS to main graph too for GSLs
         topology_only_gs.graph.add_node(gs.id)
-    log.debug(
-        f"  > Built topologies with {len(topology_with_isls.graph.nodes())} initial nodes."
-    )
+    log.debug(f"  > Built topologies with {len(topology_with_isls.graph.nodes())} initial nodes.")
     log.debug(f"  > Max. range GSL......... {orbital_data.max_gsl_length_m} m")
     log.debug(f"  > Max. range ISL......... {orbital_data.max_isl_length_m} m")
     return topology_with_isls, topology_only_gs

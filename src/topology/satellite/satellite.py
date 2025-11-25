@@ -1,4 +1,4 @@
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import ephem
 
@@ -65,7 +65,9 @@ class Satellite:
         """
         try:
             # Generate the topological address for the neighbor satellite
-            return TopologicalNetworkAddress.set_address_from_orbital_parameters(neighbor_satellite_id)
+            return TopologicalNetworkAddress.set_address_from_orbital_parameters(
+                neighbor_satellite_id
+            )
         except Exception:
             # Log the error but don't crash the system
             return None
@@ -83,7 +85,7 @@ class Satellite:
         Returns:
             int: The satellite ID of the best neighbor, or None if no neighbors available
         """
-        if not hasattr(self, 'sixgrupa_addr') or not self.sixgrupa_addr:
+        if not hasattr(self, "sixgrupa_addr") or not self.sixgrupa_addr:
             return None
 
         my_address = self.sixgrupa_addr
@@ -95,24 +97,30 @@ class Satellite:
         # Get satellite subgraph to find neighbors
         try:
             all_satellite_ids = {sat.id for sat in topology.get_satellites()}
-            satellite_node_ids = [node_id for node_id in topology.graph.nodes() if node_id in all_satellite_ids]
+            satellite_node_ids = [
+                node_id for node_id in topology.graph.nodes() if node_id in all_satellite_ids
+            ]
             satellite_only_subgraph = topology.graph.subgraph(satellite_node_ids)
 
             # Check all neighbors
             for neighbor_id in satellite_only_subgraph.neighbors(self.id):
                 try:
-                    neighbor_address = TopologicalNetworkAddress.set_address_from_orbital_parameters(neighbor_id)
-                    neighbor_distance_to_dest = neighbor_address.topological_distance_to(destination_address)
-                    
+                    neighbor_address = (
+                        TopologicalNetworkAddress.set_address_from_orbital_parameters(neighbor_id)
+                    )
+                    neighbor_distance_to_dest = neighbor_address.topological_distance_to(
+                        destination_address
+                    )
+
                     # If this neighbor is closer to destination, consider it
                     if neighbor_distance_to_dest < best_distance:
                         best_distance = neighbor_distance_to_dest
                         best_neighbor_id = neighbor_id
-                        
+
                 except Exception:
                     # Skip this neighbor if we can't get its address
                     continue
-                    
+
         except Exception:
             # If we can't access topology, return None
             return None

@@ -1,7 +1,4 @@
 from src import logger
-from src.topology.constellation import ConstellationData
-from src.topology.satellite.topological_network_address import TopologicalNetworkAddress
-from src.topology.topology import LEOTopology
 
 log = logger.get_logger(__name__)
 

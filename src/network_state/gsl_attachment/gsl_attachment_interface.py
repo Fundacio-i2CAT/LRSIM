@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from astropy.time import Time
 
-from src.topology.topology import LEOTopology, GroundStation
+from src.topology.topology import GroundStation, LEOTopology
 
 
 class GSLAttachmentStrategy(ABC):
@@ -16,10 +16,7 @@ class GSLAttachmentStrategy(ABC):
 
     @abstractmethod
     def select_attachments(
-        self,
-        topology: LEOTopology,
-        ground_stations: List[GroundStation],
-        current_time: Time
+        self, topology: LEOTopology, ground_stations: List[GroundStation], current_time: Time
     ) -> List[Tuple[float, int]]:
         """
         Select a single attachment point for each ground station.
