@@ -24,8 +24,8 @@
 from astropy.time import Time
 
 from src import logger
-from src.topology.topology import ConstellationData, GroundStation, LEOTopology
 from src.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
+from src.topology.topology import ConstellationData, GroundStation, LEOTopology
 
 from .fstate_calculation import calculate_fstate_shortest_path_object_no_gs_relay
 

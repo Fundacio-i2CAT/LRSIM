@@ -1,15 +1,15 @@
 # fstate_calculation.py (Refactored Function)
 
 import math
-import networkx as nx
-import numpy as np
 from typing import Dict, List, Tuple
 
+import networkx as nx
+import numpy as np
 from astropy.time import Time
 
 from src import logger
-from src.topology.topology import GroundStation, LEOTopology
 from src.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
+from src.topology.topology import GroundStation, LEOTopology
 
 log = logger.get_logger(__name__)
 

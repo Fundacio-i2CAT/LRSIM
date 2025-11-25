@@ -34,7 +34,7 @@ class GroundStation:
         self.cartesian_x = cartesian_x
         self.cartesian_y = cartesian_y
         self.cartesian_z = cartesian_z
-        
+
         # Topological routing attributes
         self.sixgrupa_addr: Optional[TopologicalNetworkAddress] = None
         self.previous_attached_satellite_id: Optional[int] = None

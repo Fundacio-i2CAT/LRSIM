@@ -1,9 +1,10 @@
-import networkx as nx
 from typing import Optional
 
+import networkx as nx
+
 from src import logger
-from src.topology.topology import GroundStation, LEOTopology, ConstellationData
 from src.topology.satellite.topological_network_address import TopologicalNetworkAddress
+from src.topology.topology import ConstellationData, GroundStation, LEOTopology
 
 log = logger.get_logger(__name__)
 

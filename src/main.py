@@ -6,16 +6,17 @@ import os
 import yaml
 
 from src import logger
-from src.topology.distance_tools import geodetic2cartesian
 from src.network_state.generate_network_state import generate_dynamic_state
+
 # Import GSL attachment strategies to ensure they are registered
 from src.network_state.gsl_attachment.gsl_attachment_strategies import *  # noqa: F403, F401
 from src.tles.generate_tles_from_scratch import generate_tles_from_scratch_with_sgp
 from src.tles.read_tles import read_tles
+from src.topology.distance_tools import geodetic2cartesian
 from src.topology.satellite.satellite import Satellite
 from src.topology.topology import ConstellationData, GroundStation
 
-log = None
+log = logger.get_logger(__name__)
 
 
 def load_config(config_path):
@@ -29,10 +30,8 @@ def load_config(config_path):
 
 def setup_logging(config):
     """Initializes the logger based on configuration."""
-    global log
     log_config = config["logging"]
     logger.setup_logger(is_debug=log_config["is_debug"], file_name=log_config["file_name"])
-    log = logger.get_logger(__name__)
     log.info("Logger initialized.")
 
 
@@ -216,7 +215,7 @@ def execute_simulation_run(config, parsed_tles_data, sim_satellites, ground_stat
     )
     log.info(f"Generated {len(all_states)} dynamic states.")
     for idx, state in enumerate(all_states):
-        if 'fstate' in state:
+        if "fstate" in state:
             log.info(f"Generated fstate at step {idx}: {state['fstate']}")
         else:
             log.warning(f"No fstate generated at step {idx}: {state}")

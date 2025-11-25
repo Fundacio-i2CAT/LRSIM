@@ -3,10 +3,10 @@ from typing import List, Tuple
 from astropy.time import Time
 
 from src import logger
-from src.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
 from src.network_state.gsl_attachment.gsl_attachment_factory import GSLAttachmentFactory
-from src.topology.topology import LEOTopology, GroundStation
+from src.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
 from src.topology import distance_tools
+from src.topology.topology import GroundStation, LEOTopology
 
 log = logger.get_logger(__name__)
 
