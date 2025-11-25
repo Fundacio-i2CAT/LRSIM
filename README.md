@@ -1,7 +1,7 @@
 # LEO Routing Simulation Framework
 
 <img src="i2cat_logo.png" alt="i2CAT Logo" width="150"/>
-<img src="lrsim_logo.png" alt="LRSIM Logo" width="150"/>
+<img src="lrsim_logo.png" alt="LRSIM Logo" width="450"/>
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
