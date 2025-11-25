@@ -1,4 +1,4 @@
-# LEO Routing Simulation Framework
+# LEOPath: A LEO Satellite Routing Simulation Framework
 
 <img src="i2cat_logo.png" alt="i2CAT Logo" width="150"/>
 <img src="leopath_logo.png" alt="LEOPath Logo" width="450"/>
@@ -13,7 +13,7 @@ This tool enables researchers and engineers to study network dynamics, routing p
 
 ## Table of Contents
 
-- [LEO Routing Simulation Framework](#leo-routing-simulation-framework)
+- [LEOPath: A LEO Satellite Routing Simulation Framework](#leopath-a-leo-satellite-routing-simulation-framework)
   - [Table of Contents](#table-of-contents)
   - [Overview \& Features](#overview--features)
   - [Why LEOPath?](#why-leopath)

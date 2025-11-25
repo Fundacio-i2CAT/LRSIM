@@ -1,7 +1,7 @@
 services:
   leo-routing-simu:
     build: .
-    image: leo-routing-simu:latest
+    image: ghcr.io/fundacio-i2cat/leopath:latest
     container_name: leo-routing-simu
     volumes:
       - ./leopath/config:/app/leopath/config
@@ -17,7 +17,7 @@ services:
   # Service for visualization
   leo-routing-viz:
     build: .
-    image: leo-routing-simu:latest
+    image: ghcr.io/fundacio-i2cat/leopath:latest
     container_name: leo-routing-viz
     volumes:
       - ./leopath/config:/app/leopath/config
