@@ -15,11 +15,10 @@ This tool enables researchers and engineers to study network dynamics, routing p
 
 - [LEO Routing Simulation Framework](#leo-routing-simulation-framework)
   - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
+  - [Overview \& Features](#overview--features)
   - [Why LRSIM?](#why-lrsim)
     - [What LRSIM Does](#what-lrsim-does)
     - [What LRSIM Does Not Do](#what-lrsim-does-not-do)
-  - [Features](#features)
   - [Prerequisites](#prerequisites)
     - [For Docker Deployment (Recommended)](#for-docker-deployment-recommended)
     - [For Local Development](#for-local-development)
@@ -49,16 +48,17 @@ This tool enables researchers and engineers to study network dynamics, routing p
   - [Attributions](#attributions)
   - [Contact](#contact)
 
-## Overview
+## Overview & Features
 
 This project provides a simple yet complete toolkit for quickly simulating and analyzing LEO satellite network routing running in commodity hardware.
 
-* **Very easy to run**: Can run everywhere using docker containers.
-* **Constellation Simulation**: Model realistic LEO satellite constellations with configurable parameters (altitude, inclination, number of satellites, etc.). Just edit te configuration file and that's it.
-* **Real or Custom Constellations**: Simulate well-known constellations like Starlink using the data from Celestrak or create custom configurations just with orbital parameters with synthetic TLE generation.
-* **Routing Algorithms**: Compare different routing strategies and GSL attachment policies through a pluggable architecture.
-* **Network Dynamics**: Simulate time-varying network states with dynamic Inter-Satellite Links (ISLs) and Ground Station Links (GSLs)
-* **Visualization**: Generate interactive 3D visualizations of satellite orbits, connectivity patterns, and ground station coverage using Cesium
+- 🐳 **Very easy to run**: Can run everywhere using docker containers.
+- 🛰️ **Realistic Satellite Modeling**: Model realistic LEO satellite constellations with configurable parameters (altitude, inclination, number of satellites, etc.) using Two-Line Element (TLE) sets and SGP4 propagation model.
+- 🌌 **Real or Custom Constellations**: Simulate well-known constellations like Starlink using data directly from Celestrak or create custom configurations with the included synthetic TLE generation.
+- 🌐 **Dynamic Network State**: Simulate time-varying network states with dynamic Inter-Satellite Links (ISLs) and Ground Station Links (GSLs).
+- 📊 **Pluggable Routing Algorithms**: Compare different routing strategies and GSL attachment policies through a pluggable architecture.
+- 🗺️ **Ground Station Integration**: Support for multiple ground stations with realistic visibility constraints.
+- 🎨 **3D Visualization**: Generate interactive 3D visualizations of satellite orbits, connectivity patterns, and ground station coverage using Cesium.
 
 The framework currently supports the following routing algorithms:
 - **Shortest Path Link-State Routing**: Traditional Dijkstra-based routing over satellite networks
@@ -90,16 +90,6 @@ LRSIM focuses on **network topology and routing state generation**, not full pro
 
 For packet-level simulations, LRSIM's forwarding state output can be integrated with network simulators like NS-3 (as demonstrated in Hypatia), enabling end-to-end performance evaluation when needed.
 
-
-## Features
-
-- 🛰️ **Realistic Satellite Modeling**: Uses Two-Line Element (TLE) sets and SGP4 propagation for accurate orbital mechanics
-- 🌐 **Dynamic Network State**: Simulates time-varying network topology with configurable time steps
-- 📊 **Multiple Routing Algorithms**: Pluggable routing algorithm architecture for easy comparison and extension
-- 🗺️ **Ground Station Integration**: Support for multiple ground stations with realistic visibility constraints
-- 🎨 **3D Visualization**: Interactive web-based visualization using Cesium for constellation analysis
-- 🐳 **Docker Support**: Containerized deployment for reproducible simulations
-- 📝 **Flexible Configuration**: YAML-based configuration for easy simulation setup
 
 ## Prerequisites
 
