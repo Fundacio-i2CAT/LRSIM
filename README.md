@@ -560,6 +560,12 @@ Attributions of Third Party Components of this work:
 
 ## Contact
 
-- **Project Maintainer**: Sergio Giménez
-- **Email**: sergio.gimenez@i2cat.net
+**Project Maintainer**: 
+
+* Sergio Giménez [@sergio-gimenez](https://github.com/sergio-gimenez) ([sergio.gimenez@i2cat.net](mailto:sergio.gimenez@i2cat.net))
+
+**Contributors:**
+
+ * Sergio Giménez [@sergio-gimenez](https://github.com/sergio-gimenez) ([sergio.gimenez@i2cat.net](mailto:sergio.gimenez@i2cat.net))
+ * Eduard Grasa [@edugrasa](https://github.com/edugrasa) ([eduard.grasa@i2cat.net](mailto:eduard.grasa@i2cat.net))
 
