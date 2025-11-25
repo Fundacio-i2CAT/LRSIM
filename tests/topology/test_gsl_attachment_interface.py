@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 
 from astropy.time import Time
 
-from lrsim.network_state.gsl_attachment.gsl_attachment_factory import GSLAttachmentFactory
-from lrsim.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
-from lrsim.topology.topology import GroundStation, LEOTopology
+from leopath.network_state.gsl_attachment.gsl_attachment_factory import GSLAttachmentFactory
+from leopath.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
+from leopath.topology.topology import GroundStation, LEOTopology
 
 
 class MockGSLAttachmentStrategy(GSLAttachmentStrategy):

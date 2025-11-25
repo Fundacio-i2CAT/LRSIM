@@ -8,9 +8,9 @@ import unittest
 import ephem
 from astropy.time import Time
 
-from lrsim.network_state.generate_network_state import _generate_state_for_step
-from lrsim.topology.distance_tools import geodetic2cartesian
-from lrsim.topology.topology import ConstellationData, GroundStation, Satellite
+from leopath.network_state.generate_network_state import _generate_state_for_step
+from leopath.topology.distance_tools import geodetic2cartesian
+from leopath.topology.topology import ConstellationData, GroundStation, Satellite
 
 
 class TestEndToEndKuiperTriangle(unittest.TestCase):

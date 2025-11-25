@@ -23,21 +23,21 @@ classifiers = [
 dynamic = ["dependencies"]
 
 [project.scripts]
-lrsim = "lrsim.main:main"
+leopath = "leopath.main:main"
 
 [project.urls]
-"Homepage" = "https://github.com/Fundacio-i2CAT/LRSIM"
-"Bug Tracker" = "https://github.com/Fundacio-i2CAT/LRSIM/issues"
+"Homepage" = "https://github.com/Fundacio-i2CAT/LEOPath"
+"Bug Tracker" = "https://github.com/Fundacio-i2CAT/LEOPath/issues"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["lrsim*"]
+include = ["leopath*"]
 
 [tool.setuptools.package-data]
-"lrsim" = ["**/*.yaml", "**/*.html", "**/*.js", "**/*.css", "**/*.png"]
+"leopath" = ["**/*.yaml", "**/*.html", "**/*.js", "**/*.css", "**/*.png"]
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -45,14 +45,14 @@ ignore_missing_imports = true
 [tool.coverage.run]
 source = ["livecov"]
 omit = [
-    "lrsim/tests/*",
-    "lrsim/__init__.py",
-    "lrsim/logger.py",
-    "lrsim/satellite_visualisation/*",
+    "leopath/tests/*",
+    "leopath/__init__.py",
+    "leopath/logger.py",
+    "leopath/satellite_visualisation/*",
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov-report xml:cov.xml --cov lrsim"
+addopts = "--cov-report xml:cov.xml --cov leopath"
 testpaths = ["tests"]
 log_cli = true
 log_level = "INFO"

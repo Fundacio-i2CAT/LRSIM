@@ -1,13 +1,13 @@
 import math
 import unittest
 
-from lrsim import logger
-from lrsim.network_state.generate_network_state import _generate_state_for_step
-from lrsim.tles.generate_tles_from_scratch import generate_tles_from_scratch_with_sgp
-from lrsim.tles.read_tles import read_tles  # You might need to ensure this is accessible
-from lrsim.topology.distance_tools import geodetic2cartesian
-from lrsim.topology.satellite.satellite import Satellite
-from lrsim.topology.topology import (
+from leopath import logger
+from leopath.network_state.generate_network_state import _generate_state_for_step
+from leopath.tles.generate_tles_from_scratch import generate_tles_from_scratch_with_sgp
+from leopath.tles.read_tles import read_tles  # You might need to ensure this is accessible
+from leopath.topology.distance_tools import geodetic2cartesian
+from leopath.topology.satellite.satellite import Satellite
+from leopath.topology.topology import (
     ConstellationData,
     GroundStation,
 )

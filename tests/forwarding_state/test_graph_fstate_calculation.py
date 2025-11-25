@@ -6,12 +6,12 @@ from unittest.mock import MagicMock
 import ephem
 from astropy.time import Time
 
-from lrsim.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
-from lrsim.network_state.routing_algorithms.shortest_path_link_state_routing.fstate_calculation import (
+from leopath.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
+from leopath.network_state.routing_algorithms.shortest_path_link_state_routing.fstate_calculation import (
     calculate_fstate_shortest_path_object_no_gs_relay,
 )
-from lrsim.topology.satellite.satellite import Satellite
-from lrsim.topology.topology import (
+from leopath.topology.satellite.satellite import Satellite
+from leopath.topology.topology import (
     ConstellationData,
     GroundStation,
     LEOTopology,

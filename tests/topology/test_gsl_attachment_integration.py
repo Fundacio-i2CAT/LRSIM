@@ -3,11 +3,11 @@ from unittest.mock import MagicMock, patch
 
 from astropy.time import Time
 
-from lrsim.network_state.gsl_attachment.gsl_attachment_factory import GSLAttachmentFactory
-from lrsim.network_state.gsl_attachment.gsl_attachment_strategies.nearest_satellite import (
+from leopath.network_state.gsl_attachment.gsl_attachment_factory import GSLAttachmentFactory
+from leopath.network_state.gsl_attachment.gsl_attachment_strategies.nearest_satellite import (
     NearestSatelliteStrategy,
 )
-from lrsim.topology.topology import ConstellationData, GroundStation, LEOTopology, Satellite
+from leopath.topology.topology import ConstellationData, GroundStation, LEOTopology, Satellite
 
 
 class TestGSLAttachmentIntegration(unittest.TestCase):
@@ -61,7 +61,7 @@ class TestGSLAttachmentIntegration(unittest.TestCase):
         self.assertIsInstance(strategy, NearestSatelliteStrategy)
         self.assertEqual(strategy.name(), "nearest_satellite")
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_end_to_end_gsl_attachment(self, mock_distance_func):
         """Test the complete end-to-end GSL attachment process."""
 
@@ -128,7 +128,7 @@ class TestGSLAttachmentIntegration(unittest.TestCase):
         self.assertEqual(len(strategies), 1)
         self.assertIn("nearest_satellite", strategies)
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_robust_error_handling_integration(self, mock_distance_func):
         """Test that the system handles errors gracefully in integration."""
 

@@ -1,8 +1,8 @@
 import networkx as nx
 import pytest
 
-from lrsim.network_state.utils.graph import validate_no_satellite_to_gs_links
-from lrsim.topology.topology import GroundStation, Satellite
+from leopath.network_state.utils.graph import validate_no_satellite_to_gs_links
+from leopath.topology.topology import GroundStation, Satellite
 
 
 def test_validate_no_satellite_to_gs_links_valid_graph():

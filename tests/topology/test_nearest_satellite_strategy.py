@@ -3,10 +3,10 @@ from unittest.mock import MagicMock, patch
 
 from astropy.time import Time
 
-from lrsim.network_state.gsl_attachment.gsl_attachment_strategies.nearest_satellite import (
+from leopath.network_state.gsl_attachment.gsl_attachment_strategies.nearest_satellite import (
     NearestSatelliteStrategy,
 )
-from lrsim.topology.topology import ConstellationData, GroundStation, LEOTopology, Satellite
+from leopath.topology.topology import ConstellationData, GroundStation, LEOTopology, Satellite
 
 
 class TestNearestSatelliteStrategy(unittest.TestCase):
@@ -48,7 +48,7 @@ class TestNearestSatelliteStrategy(unittest.TestCase):
         """Test that the strategy returns the correct name."""
         self.assertEqual(self.strategy.name(), "nearest_satellite")
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_select_attachments_all_visible(self, mock_distance_func):
         """Test selecting attachments when all satellites are visible."""
         # Mock distance function to return distances in order: 500km, 800km, 300km, 1200km, 600km
@@ -74,7 +74,7 @@ class TestNearestSatelliteStrategy(unittest.TestCase):
         # Verify distance function was called for all satellites
         self.assertEqual(mock_distance_func.call_count, 5)
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_select_attachments_some_out_of_range(self, mock_distance_func):
         """Test selecting attachments when some satellites are out of range."""
         # Mock distances: some within range, some beyond max_gsl_length_m (1000km)
@@ -96,7 +96,7 @@ class TestNearestSatelliteStrategy(unittest.TestCase):
         self.assertEqual(distance, 300000.0)
         self.assertEqual(sat_id, 2)
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_select_attachments_no_satellites_in_range(self, mock_distance_func):
         """Test behavior when no satellites are in range."""
         # All satellites are beyond max range
@@ -112,7 +112,7 @@ class TestNearestSatelliteStrategy(unittest.TestCase):
         self.assertEqual(distance, -1.0)
         self.assertEqual(sat_id, -1)
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_select_attachments_multiple_ground_stations(self, mock_distance_func):
         """Test selecting attachments for multiple ground stations."""
 
@@ -164,7 +164,7 @@ class TestNearestSatelliteStrategy(unittest.TestCase):
         self.assertEqual(distance, 450000.0)
         self.assertEqual(sat_id, 0)
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_select_attachments_distance_calculation_error(self, mock_distance_func):
         """Test handling of distance calculation errors."""
 
@@ -186,7 +186,7 @@ class TestNearestSatelliteStrategy(unittest.TestCase):
         self.assertEqual(distance, 500000.0)
         self.assertEqual(sat_id, 0)
 
-    @patch("lrsim.topology.distance_tools.distance_m_ground_station_to_satellite")
+    @patch("leopath.topology.distance_tools.distance_m_ground_station_to_satellite")
     def test_select_attachments_all_distance_errors(self, mock_distance_func):
         """Test behavior when all distance calculations fail."""
         # All distance calculations raise exceptions

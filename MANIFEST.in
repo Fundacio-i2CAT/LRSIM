@@ -1,4 +1,4 @@
 include requirements.txt
 include README.md
 include LICENSE
-recursive-include lrsim *.yaml *.html *.js *.css *.png
+recursive-include leopath *.yaml *.html *.js *.css *.png

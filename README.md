@@ -1,7 +1,7 @@
 # LEO Routing Simulation Framework
 
 <img src="i2cat_logo.png" alt="i2CAT Logo" width="150"/>
-<img src="lrsim_logo.png" alt="LRSIM Logo" width="450"/>
+<img src="leopath_logo.png" alt="LEOPath Logo" width="450"/>
 
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
@@ -16,9 +16,9 @@ This tool enables researchers and engineers to study network dynamics, routing p
 - [LEO Routing Simulation Framework](#leo-routing-simulation-framework)
   - [Table of Contents](#table-of-contents)
   - [Overview \& Features](#overview--features)
-  - [Why LRSIM?](#why-lrsim)
-    - [What LRSIM Does](#what-lrsim-does)
-    - [What LRSIM Does Not Do](#what-lrsim-does-not-do)
+  - [Why LEOPath?](#why-leopath)
+    - [What LEOPath Does](#what-leopath-does)
+    - [What LEOPath Does Not Do](#what-leopath-does-not-do)
   - [Prerequisites](#prerequisites)
     - [For Docker Deployment (Recommended)](#for-docker-deployment-recommended)
     - [For Local Development](#for-local-development)
@@ -64,13 +64,13 @@ The framework currently supports the following routing algorithms:
 - **Shortest Path Link-State Routing**: Traditional Dijkstra-based routing over satellite networks
 - **Topological Routing**: Novel routing algorithm based on the [6G-RUPA](https://6grupa.com) architecture for improved scalability and reduced control overhead
 
-## Why LRSIM?
+## Why LEOPath?
 
-LRSIM is essentially a fork of an existing simulator called [Hypatia](https://github.com/snkas/hypatia). While Hypatia provides valuable foundations for satellite network simulation, it has limitations when executing it or extending it, such as tightly coupled routing logic that makes it difficult to implement and compare new protocols or inflexible data output formats that complicate analysis.
+LEOPath is essentially a fork of an existing simulator called [Hypatia](https://github.com/snkas/hypatia). While Hypatia provides valuable foundations for satellite network simulation, it has limitations when executing it or extending it, such as tightly coupled routing logic that makes it difficult to implement and compare new protocols or inflexible data output formats that complicate analysis.
 
-LRSIM uses Hypatia core logic but makes it extremely easy to use, maintain and extend.
+LEOPath uses Hypatia core logic but makes it extremely easy to use, maintain and extend.
 
-### What LRSIM Does
+### What LEOPath Does
 
 - **Satellite Movement Simulation**: Modeling of satellite orbital mechanics using SGP4 propagation model.
 - **Dynamic Link Management**: Automatic management of Inter-Satellite Links (ISLs) and Ground-to-Satellite Links (GSLs) based on visibility and distance constraints
@@ -81,14 +81,14 @@ LRSIM uses Hypatia core logic but makes it extremely easy to use, maintain and e
   - Novel topological routing scheme with hierarchical addressing
   - Easy extension for custom routing algorithms
 
-### What LRSIM Does Not Do
+### What LEOPath Does Not Do
 
-LRSIM focuses on **network topology and routing state generation**, not full protocol stack simulation. It does not simulate:
+LEOPath focuses on **network topology and routing state generation**, not full protocol stack simulation. It does not simulate:
 - Complete network protocol stacks (TCP/IP, application layers)
 - Packet-level processing and queueing
 - Physical layer details (modulation, coding, interference)
 
-For packet-level simulations, LRSIM's forwarding state output can be integrated with network simulators like NS-3 (as demonstrated in Hypatia), enabling end-to-end performance evaluation when needed.
+For packet-level simulations, LEOPath's forwarding state output can be integrated with network simulators like NS-3 (as demonstrated in Hypatia), enabling end-to-end performance evaluation when needed.
 
 
 ## Prerequisites
@@ -122,10 +122,10 @@ The easiest way to run simulations is using the `run-simulations.sh` convenience
 2. **Run simulations with the convenience script**:
    ```bash
    # Run simulation with a specific configuration
-   ./run-simulations.sh run -c lrsim/config/ether_simple.yaml
+   ./run-simulations.sh run -c leopath/config/ether_simple.yaml
 
    # Generate visualization for the simulation
-   ./run-simulations.sh visualise -c lrsim/config/ether_simple.yaml
+   ./run-simulations.sh visualise -c leopath/config/ether_simple.yaml
 
    # Clean up all generated files and containers
    ./run-simulations.sh clean
@@ -144,10 +144,10 @@ The easiest way to run simulations is using the `run-simulations.sh` convenience
    docker-compose build
 
    # Run a simulation
-   docker compose run --rm leo-routing-simu lrsim/config/ether_simple.yaml
+   docker compose run --rm leo-routing-simu leopath/config/ether_simple.yaml
 
    # Generate visualization
-   docker compose run --rm --entrypoint "python -m lrsim.satellite_visualisation.cesium_builder.main" leo-routing-viz lrsim/config/ether_simple.yaml
+   docker compose run --rm --entrypoint "python -m leopath.satellite_visualisation.cesium_builder.main" leo-routing-viz leopath/config/ether_simple.yaml
 
    # Start web server to view results
    docker compose up -d viz-server
@@ -200,14 +200,14 @@ Get started with a simple simulation in minutes using the convenience script:
 
 ```bash
 # 1. Run a basic simulation with a simplified constellation (uses Docker)
-./run-simulations.sh run -c lrsim/config/ether_simple.yaml
+./run-simulations.sh run -c leopath/config/ether_simple.yaml
 
 # 2. Check the generated output
 ls -l output/logs/
 ls -l output/simulation/
 
 # 3. Generate and view visualization (starts HTTP server on port 8080)
-./run-simulations.sh visualise -c lrsim/config/ether_simple.yaml
+./run-simulations.sh visualise -c leopath/config/ether_simple.yaml
 
 # 4. Open your browser to http://localhost:8080
 # The visualization will be available at the web interface
@@ -224,17 +224,17 @@ The main simulation entry point accepts a configuration file that defines all si
 
 **Using the installed package (Recommended):**
 ```bash
-lrsim --config <path-to-config.yaml>
+leopath --config <path-to-config.yaml>
 ```
 
 **Running as a module:**
 ```bash
-python -m lrsim.main --config <path-to-config.yaml>
+python -m leopath.main --config <path-to-config.yaml>
 ```
 
 **Available example configurations**:
-- `lrsim/config/ether_simple.yaml` - Simplified constellation (18 orbits, 18 satellites per orbit) for quick testing
-- `lrsim/config/starlink.yaml` - Full-scale Starlink-like constellation (22 orbits, 72 satellites per orbit)
+- `leopath/config/ether_simple.yaml` - Simplified constellation (18 orbits, 18 satellites per orbit) for quick testing
+- `leopath/config/starlink.yaml` - Full-scale Starlink-like constellation (22 orbits, 72 satellites per orbit)
 
 **Simulation outputs** are stored in timestamped directories:
 
@@ -251,7 +251,7 @@ output/
 
 The simulation is configured through YAML files that define constellation parameters, simulation settings, ground stations, and network characteristics.
 
-**Example configuration** (`lrsim/config/ether_simple.yaml`):
+**Example configuration** (`leopath/config/ether_simple.yaml`):
 
 ```yaml
 constellation:
@@ -315,17 +315,17 @@ After running a simulation, generate interactive 3D visualizations using Cesium.
 **Note**: To use the visualization, you need a Cesium Ion Access Token.
 1. Sign up for a free account at [Cesium Ion](https://ion.cesium.com/).
 2. Get your default access token.
-3. Open `lrsim/satellite_visualisation/static_html/top.html` and replace `YOUR_CESIUM_ION_TOKEN` with your actual token.
+3. Open `leopath/satellite_visualisation/static_html/top.html` and replace `YOUR_CESIUM_ION_TOKEN` with your actual token.
 
 ```bash
 # Generate visualization from simulation config
-python -m lrsim.satellite_visualisation.cesium_builder.main lrsim/config/ether_simple.yaml
+python -m leopath.satellite_visualisation.cesium_builder.main leopath/config/ether_simple.yaml
 
 # Start a local web server
 python -m http.server 8000
 
 # Open in browser
-# Navigate to: http://localhost:8000/lrsim/satellite_visualisation/visualisation_output/
+# Navigate to: http://localhost:8000/leopath/satellite_visualisation/visualisation_output/
 ```
 
 The visualization includes satellite orbits and positions over time
@@ -334,7 +334,7 @@ The visualization includes satellite orbits and positions over time
 
 ```
 leo-routing-simu/
-├── lrsim/
+├── leopath/
 │   ├── main.py                          # Main simulation entry point
 │   ├── logger.py                        # Logging configuration
 │   ├── config/                          # Configuration files
@@ -384,7 +384,7 @@ The framework supports multiple routing algorithms through a pluggable architect
 
 To implement a new routing algorithm:
 
-1. Create a new class inheriting from `RoutingAlgorithm` in `lrsim/network_state/routing_algorithms/`
+1. Create a new class inheriting from `RoutingAlgorithm` in `leopath/network_state/routing_algorithms/`
 2. Implement the required abstract methods:
    - `compute_next_hop()` - Calculate next hop for given source-destination pair
    - `update_topology()` - Update internal state based on topology changes
@@ -394,7 +394,7 @@ To implement a new routing algorithm:
 Example:
 
 ```python
-from lrsim.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
+from leopath.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
 
 class MyCustomRoutingAlgorithm(RoutingAlgorithm):
     def compute_next_hop(self, src, dst, topology):
@@ -484,8 +484,8 @@ pytest tests/topology/test_gsl_attachment_integration.py -v
 3. Make your changes with clear commit messages
 4. Add tests for new functionality
 5. Ensure all tests pass (`pytest tests/`)
-6. Format code with Black (`black lrsim/ tests/`)
-7. Run linters (`flake8 lrsim/ tests/`)
+6. Format code with Black (`black leopath/ tests/`)
+7. Run linters (`flake8 leopath/ tests/`)
 8. Submit a pull request
 
 **Note**: By contributing to this project, you agree that your contributions will be licensed under the AGPL-3.0 license.
@@ -501,14 +501,14 @@ pytest tests/topology/test_gsl_attachment_integration.py -v
 ### Adding New Features
 
 **New Routing Algorithms**:
-1. Create implementation in `lrsim/network_state/routing_algorithms/`
+1. Create implementation in `leopath/network_state/routing_algorithms/`
 2. Inherit from `RoutingAlgorithm` base class
 3. Register in `routing_algorithm_factory.py`
 4. Add tests in `tests/forwarding_state/`
 5. Update documentation
 
 **New GSL Attachment Strategies**:
-1. Implement strategy in `lrsim/network_state/gsl_attachment/`
+1. Implement strategy in `leopath/network_state/gsl_attachment/`
 2. Register with decorator pattern
 3. Add integration tests
 4. Document in configuration guide

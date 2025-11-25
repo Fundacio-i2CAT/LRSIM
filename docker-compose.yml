@@ -4,7 +4,7 @@ services:
     image: leo-routing-simu:latest
     container_name: leo-routing-simu
     volumes:
-      - ./src/config:/app/src/config
+      - ./leopath/config:/app/leopath/config
       - ./output/logs:/app/logs
       - ./output/tles:/app/tle_output
       - ./output/simulation:/app/simulation_output
@@ -20,16 +20,16 @@ services:
     image: leo-routing-simu:latest
     container_name: leo-routing-viz
     volumes:
-      - ./src/config:/app/src/config
+      - ./leopath/config:/app/leopath/config
       - ./output/logs:/app/logs
       - ./output/tles:/app/tle_output
       - ./output/simulation:/app/simulation_output
-      - ./src/satellite_visualisation/visualisation_output:/app/src/satellite_visualisation/visualisation_output
+      - ./leopath/satellite_visualisation/visualisation_output:/app/leopath/satellite_visualisation/visualisation_output
       - .:/app/output:delegated
     working_dir: /app/output
     environment:
       - PYTHONPATH=/app
-    entrypoint: ["python", "-m", "src.satellite_visualisation.cesium_builder.main"]
+    entrypoint: ["python", "-m", "leopath.satellite_visualisation.cesium_builder.main"]
     
   # HTTP server for viewing visualizations
   viz-server:
@@ -38,7 +38,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./src/satellite_visualisation/cesium_builder/visualisation_output:/usr/share/nginx/html:ro
+      - ./leopath/satellite_visualisation/cesium_builder/visualisation_output:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - leo-routing-viz
