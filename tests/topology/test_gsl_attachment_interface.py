@@ -1,5 +1,5 @@
 import unittest
-from typing import List, Tuple, Dict, Any
+from typing import Any, Dict, List, Tuple
 from unittest.mock import MagicMock
 
 from astropy.time import Time
