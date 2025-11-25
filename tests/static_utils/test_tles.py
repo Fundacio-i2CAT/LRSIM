@@ -27,11 +27,11 @@ import unittest
 import ephem
 from astropy.time import Time
 
-from src.tles.generate_tles_from_scratch import (
+from lrsim.tles.generate_tles_from_scratch import (
     generate_tles_from_scratch_manual,
     generate_tles_from_scratch_with_sgp,
 )
-from src.tles.read_tles import read_tles, satellite_ephem_to_str
+from lrsim.tles.read_tles import read_tles, satellite_ephem_to_str
 
 
 class TestTles(unittest.TestCase):

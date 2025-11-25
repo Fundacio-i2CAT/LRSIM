@@ -1,0 +1,268 @@
+from dataclasses import dataclass
+
+from lrsim import logger
+
+log = logger.get_logger(__name__)
+
+# ==============================================================================
+# Topological Address Component Limits and Bit Allocation
+# ==============================================================================
+# These constants define the assumed maximum range for each component of the
+# topological address (sh, o, s, x). They are crucial for determining the
+# number of bits required for each component in the bit-packing serialization
+# (`to_integer` method).
+#
+# Reasoning for estimates is based on public info for LEO constellations
+# (Starlink, Kuiper, OneWeb, etc.) as of early 2025, plus headroom.
+# ------------------------------------------------------------------------------
+
+# Maximum number of distinct orbital shells (sh).
+# Starlink/Kuiper plan multiple shells. Allowing 0-15 seems generous.
+MAX_SHELLS = 16  # Max index = 15. Requires 4 bits.
+
+# Maximum number of orbital planes within any single shell (o).
+# Starlink Gen1 has 72 planes/shell. Allowing 0-127 covers this with room.
+MAX_PLANES = 128  # Max index = 127. Requires 7 bits.
+
+# Maximum number of satellites within any single plane (s).
+# Current constellations range from ~20 to ~40. Allowing 0-63 provides headroom.
+MAX_SATS_PER_PLANE = 64  # Max index = 63. Requires 6 bits.
+
+# Maximum number of Ground Stations simultaneously associated with (homed to)
+# a single satellite's sub-network (x > 0). Index x=0 is reserved for the satellite itself.
+# This depends on satellite antenna capability and network design.
+# Assuming up to 31 GSs can be addressed under one satellite seems reasonable,
+# providing flexibility without demanding excessive bits.
+MAX_GS_PER_SAT_SUBNET = 31
+
+# Total number of unique endpoints addressable under one satellite's sh,o,s prefix.
+# Includes the satellite (index 0) + the max number of associated GSs.
+MAX_ENDPOINTS_PER_SAT = 1 + MAX_GS_PER_SAT_SUBNET  # e.g., 1 + 31 = 32
+
+# ------------------------------------------------------------------------------
+# Calculate bits required for each component based on the MAX values above.
+# Using (MAX-1).bit_length() handles cases where MAX is not a power of 2.
+# If MAX is 1 (e.g., only 1 shell), we still allocate 1 bit.
+# ------------------------------------------------------------------------------
+SHELL_BITS = (MAX_SHELLS - 1).bit_length() if MAX_SHELLS > 1 else 1  # e.g., 4 bits
+PLANE_BITS = (MAX_PLANES - 1).bit_length() if MAX_PLANES > 1 else 1  # e.g., 7 bits
+SAT_IDX_BITS = (
+    (MAX_SATS_PER_PLANE - 1).bit_length() if MAX_SATS_PER_PLANE > 1 else 1
+)  # e.g., 6 bits
+# Bits for subnet_index (0 to MAX_GS_PER_SAT_SUBNET inclusive)
+SUBNET_IDX_BITS = (
+    (MAX_ENDPOINTS_PER_SAT - 1).bit_length() if MAX_ENDPOINTS_PER_SAT > 1 else 1
+)  # e.g., 5 bits for 0..31
+
+# ------------------------------------------------------------------------------
+# Verify total bits fit within a standard 64-bit integer.
+# ------------------------------------------------------------------------------
+TOTAL_BITS = SHELL_BITS + PLANE_BITS + SAT_IDX_BITS + SUBNET_IDX_BITS
+log.debug(
+    f"Address bit allocation: Shell={SHELL_BITS}, Plane={PLANE_BITS}, SatIdx={SAT_IDX_BITS}, SubnetIdx={SUBNET_IDX_BITS}. Total={TOTAL_BITS}"
+)
+if TOTAL_BITS > 64:
+    # If this occurs, consider reducing MAX values, using fewer components,
+    # or switching serialization (e.g., storing as a tuple/string and hashing).
+    raise ValueError(f"Total bits required ({TOTAL_BITS}) exceeds 64 bits for address components")
+
+# ------------------------------------------------------------------------------
+# Define bit masks and shifts for packing/unpacking based on the calculated bits.
+# Packing order (MSB to LSB): SHELL | PLANE | SAT_IDX | SUBNET_IDX
+# ------------------------------------------------------------------------------
+SUBNET_IDX_MASK = (1 << SUBNET_IDX_BITS) - 1
+SAT_IDX_MASK = (1 << SAT_IDX_BITS) - 1
+PLANE_MASK = (1 << PLANE_BITS) - 1
+SHELL_MASK = (1 << SHELL_BITS) - 1
+
+# Shifts are determined by the number of bits to the right of the component
+SAT_IDX_SHIFT = SUBNET_IDX_BITS
+PLANE_SHIFT = SUBNET_IDX_BITS + SAT_IDX_BITS
+SHELL_SHIFT = SUBNET_IDX_BITS + SAT_IDX_BITS + PLANE_BITS
+# ==============================================================================
+
+
+@dataclass(frozen=True)
+class TopologicalNetworkAddress:
+    """
+    Represents a topological network address based on (shell, plane, sat_idx, subnet_idx).
+    Uses constants defined above for validation and serialization.
+
+    Attributes:
+        shell_id: Shell index (sh).
+        plane_id: Orbital plane index (o).
+        sat_index: Satellite index within plane (s).
+        subnet_index: Endpoint index within the satellite's sub-network (x).
+                      0 indicates the satellite itself.
+                      > 0 indicates a ground station homed to this satellite.
+    """
+
+    shell_id: int
+    plane_id: int
+    sat_index: int
+    subnet_index: int
+
+    def __post_init__(self):
+        if not (0 <= self.shell_id < MAX_SHELLS):
+            raise ValueError(f"shell_id {self.shell_id} out of range [0, {MAX_SHELLS - 1}]")
+        if not (0 <= self.plane_id < MAX_PLANES):
+            raise ValueError(f"plane_id {self.plane_id} out of range [0, {MAX_PLANES - 1}]")
+        if self.subnet_index == 0 and not (0 <= self.sat_index < MAX_SATS_PER_PLANE):
+            raise ValueError(
+                f"sat_index {self.sat_index} out of range [0, {MAX_SATS_PER_PLANE - 1}] for satellite address (subnet_index 0)"
+            )
+        if not (0 <= self.subnet_index < MAX_ENDPOINTS_PER_SAT):
+            raise ValueError(
+                f"subnet_index {self.subnet_index} out of range [0, {MAX_ENDPOINTS_PER_SAT - 1}]"
+            )
+
+    @property
+    def is_satellite(self) -> bool:
+        return self.subnet_index == 0
+
+    @property
+    def is_ground_station(self) -> bool:
+        return self.subnet_index > 0
+
+    def get_satellite_address(self) -> "TopologicalNetworkAddress":
+        if self.is_satellite:
+            return self
+        else:
+            return TopologicalNetworkAddress(self.shell_id, self.plane_id, self.sat_index, 0)
+
+    def to_integer(self) -> int:
+        packed_address = 0
+        packed_address |= (self.shell_id & SHELL_MASK) << SHELL_SHIFT
+        packed_address |= (self.plane_id & PLANE_MASK) << PLANE_SHIFT
+        packed_address |= (self.sat_index & SAT_IDX_MASK) << SAT_IDX_SHIFT
+        packed_address |= self.subnet_index & SUBNET_IDX_MASK
+        return packed_address
+
+    @staticmethod
+    def from_integer(packed_address: int) -> "TopologicalNetworkAddress":
+        if not isinstance(packed_address, int) or packed_address < 0:
+            raise ValueError("Packed address must be a non-negative integer")
+
+        shell_id = (packed_address >> SHELL_SHIFT) & SHELL_MASK
+        plane_id = (packed_address >> PLANE_SHIFT) & PLANE_MASK
+        sat_index = (packed_address >> SAT_IDX_SHIFT) & SAT_IDX_MASK
+        subnet_index = packed_address & SUBNET_IDX_MASK
+        try:
+            return TopologicalNetworkAddress(
+                shell_id=shell_id, plane_id=plane_id, sat_index=sat_index, subnet_index=subnet_index
+            )
+        except ValueError as e:
+            log.error(
+                f"Failed to create address from integer {packed_address}: {e}. Decoded components: sh={shell_id}, o={plane_id}, s={sat_index}, x={subnet_index}"
+            )
+            raise
+
+    @staticmethod
+    def set_address_from_orbital_parameters(satellite_id: int) -> "TopologicalNetworkAddress":
+        """
+        Create a TopologicalNetworkAddress for a satellite based on a simple mapping from satellite ID.
+        This is a basic implementation that maps satellite IDs to topological coordinates.
+
+        For a more realistic implementation, this should map based on the actual constellation
+        structure (orbital planes, satellites per plane, etc.).
+
+        Args:
+            satellite_id: The satellite ID (0-based)
+
+        Returns:
+            TopologicalNetworkAddress for the satellite (subnet_index=0)
+        """
+        if satellite_id < 0:
+            raise ValueError(f"satellite_id must be non-negative, got {satellite_id}")
+
+        # Simple mapping: assume single shell, satellites distributed across planes
+        # This is a basic implementation - in a real system this would map to actual constellation structure
+        shell_id = 0  # Single shell for simplicity
+
+        # For a Starlink-like constellation with 22 planes and ~72 sats per plane:
+        # We'll use a simple division to determine plane and position within plane
+        # This assumes satellites are numbered sequentially across planes
+
+        # Estimate constellation size based on common configurations
+        # If we have more satellites than fit in one shell, we can add more shells
+        max_sats_per_shell = MAX_PLANES * MAX_SATS_PER_PLANE
+
+        if satellite_id >= max_sats_per_shell:
+            # Multiple shells needed
+            shell_id = satellite_id // max_sats_per_shell
+            sat_id_in_shell = satellite_id % max_sats_per_shell
+        else:
+            shell_id = 0
+            sat_id_in_shell = satellite_id
+
+        # Validate shell_id is within bounds
+        if shell_id >= MAX_SHELLS:
+            raise ValueError(
+                f"satellite_id {satellite_id} would require shell_id {shell_id}, which exceeds MAX_SHELLS {MAX_SHELLS}"
+            )
+
+        # Distribute satellites across planes
+        # Simple strategy: fill planes sequentially
+        plane_id = sat_id_in_shell // MAX_SATS_PER_PLANE
+        sat_index = sat_id_in_shell % MAX_SATS_PER_PLANE
+
+        # Validate the computed values
+        if plane_id >= MAX_PLANES:
+            raise ValueError(
+                f"satellite_id {satellite_id} would require plane_id {plane_id}, which exceeds MAX_PLANES {MAX_PLANES}"
+            )
+
+        # subnet_index = 0 for satellites (not ground stations)
+        subnet_index = 0
+
+        return TopologicalNetworkAddress(
+            shell_id=shell_id, plane_id=plane_id, sat_index=sat_index, subnet_index=subnet_index
+        )
+
+    def topological_distance_to(self, other: "TopologicalNetworkAddress") -> float:
+        """
+        Calculate the topological distance to another address.
+
+        This computes a distance metric based on the topological coordinates,
+        which can be used for routing decisions without needing shortest path algorithms.
+
+        Args:
+            other: The target topological address
+
+        Returns:
+            float: Topological distance (lower values indicate closer addresses)
+        """
+        # Get satellite addresses (in case one is a ground station)
+        self_sat = self.get_satellite_address()
+        other_sat = other.get_satellite_address()
+
+        # If same satellite, distance is 0
+        if (
+            self_sat.shell_id == other_sat.shell_id
+            and self_sat.plane_id == other_sat.plane_id
+            and self_sat.sat_index == other_sat.sat_index
+        ):
+            return 0.0
+
+        # Different shells have highest distance
+        if self_sat.shell_id != other_sat.shell_id:
+            shell_diff = abs(self_sat.shell_id - other_sat.shell_id)
+            return 1000.0 + shell_diff * 100.0
+
+        # Same shell, different planes
+        if self_sat.plane_id != other_sat.plane_id:
+            # Calculate plane distance considering wraparound
+            plane_diff = abs(self_sat.plane_id - other_sat.plane_id)
+            plane_diff_wrap = MAX_PLANES - plane_diff
+            plane_distance = min(plane_diff, plane_diff_wrap)
+            return 100.0 + plane_distance * 10.0
+
+        # Same shell and plane, different satellite index
+        sat_diff = abs(self_sat.sat_index - other_sat.sat_index)
+        sat_diff_wrap = MAX_SATS_PER_PLANE - sat_diff
+        sat_distance = min(sat_diff, sat_diff_wrap)
+        return 1.0 + sat_distance
+
+    def __str__(self) -> str:
+        kind = "Sat" if self.is_satellite else f"GS[{self.subnet_index}]"
+        return f"TopoAddr(sh:{self.shell_id}, o:{self.plane_id}, s:{self.sat_index}, x:{kind})"

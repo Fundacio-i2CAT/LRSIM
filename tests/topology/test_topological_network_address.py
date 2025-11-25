@@ -1,6 +1,6 @@
 import unittest
 
-from src.topology.satellite.topological_network_address import (
+from lrsim.topology.satellite.topological_network_address import (
     MAX_ENDPOINTS_PER_SAT,
     MAX_PLANES,
     MAX_SATS_PER_PLANE,
@@ -68,7 +68,7 @@ class TestTopologicalNetworkAddress(unittest.TestCase):
     def test_to_integer_serialization(self):
         """Test the integer serialization with known values."""
         # Use the actual constants from your address module for calculation
-        from src.topology.satellite.topological_network_address import (
+        from lrsim.topology.satellite.topological_network_address import (
             PLANE_MASK,
             PLANE_SHIFT,
             SAT_IDX_MASK,

@@ -7,7 +7,7 @@ including address generation, conversion, and validation.
 
 import unittest
 
-from src.topology.satellite.topological_network_address import TopologicalNetworkAddress
+from lrsim.topology.satellite.topological_network_address import TopologicalNetworkAddress
 
 
 class TestTopologicalNetworkAddress(unittest.TestCase):

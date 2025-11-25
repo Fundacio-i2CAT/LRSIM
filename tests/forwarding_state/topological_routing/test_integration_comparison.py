@@ -11,13 +11,13 @@ import unittest
 import ephem
 
 # Import to register the strategy
-from src.network_state.gsl_attachment.gsl_attachment_strategies.nearest_satellite import (  # noqa: F401
+from lrsim.network_state.gsl_attachment.gsl_attachment_strategies.nearest_satellite import (  # noqa: F401
     NearestSatelliteStrategy,
 )
-from src.network_state.routing_algorithms.routing_algorithm_factory import get_routing_algorithm
-from src.topology.satellite.satellite import Satellite
-from src.topology.satellite.topological_network_address import TopologicalNetworkAddress
-from src.topology.topology import (
+from lrsim.network_state.routing_algorithms.routing_algorithm_factory import get_routing_algorithm
+from lrsim.topology.satellite.satellite import Satellite
+from lrsim.topology.satellite.topological_network_address import TopologicalNetworkAddress
+from lrsim.topology.topology import (
     ConstellationData,
     GroundStation,
     LEOTopology,
@@ -113,7 +113,7 @@ class TestTopologicalVsShortestPathRouting(unittest.TestCase):
     def test_simple_linear_topology_comparison(self):
         """Test that topological routing produces valid forwarding state."""
         # Simplified test focused on verifying topological routing works correctly
-        from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+        from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
             calculate_fstate_topological_routing_no_gs_relay,
         )
 
@@ -164,7 +164,7 @@ class TestTopologicalVsShortestPathRouting(unittest.TestCase):
 
     def test_triangle_topology_comparison(self):
         """Test topological routing on a triangle topology with one ground station."""
-        from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+        from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
             calculate_fstate_topological_routing_no_gs_relay,
         )
 
@@ -244,7 +244,7 @@ class TestTopologicalVsShortestPathRouting(unittest.TestCase):
 
     def test_performance_comparison_metrics(self):
         """Test that topological routing produces metrics on a linear chain topology."""
-        from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+        from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
             calculate_fstate_topological_routing_no_gs_relay,
         )
 

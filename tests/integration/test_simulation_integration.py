@@ -27,7 +27,7 @@ class TestMainSimulationIntegration(unittest.TestCase):
         """Set up test fixtures."""
         # Get the project root directory
         self.project_root = Path(__file__).parent.parent.parent
-        self.main_py_path = self.project_root / "src" / "main.py"
+        self.main_py_path = self.project_root / "lrsim" / "main.py"
 
         # Create a minimal test configuration
         self.test_config = {

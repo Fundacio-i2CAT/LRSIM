@@ -122,10 +122,10 @@ The easiest way to run simulations is using the `run-simulations.sh` convenience
 2. **Run simulations with the convenience script**:
    ```bash
    # Run simulation with a specific configuration
-   ./run-simulations.sh run -c src/config/ether_simple.yaml
+   ./run-simulations.sh run -c lrsim/config/ether_simple.yaml
 
    # Generate visualization for the simulation
-   ./run-simulations.sh visualise -c src/config/ether_simple.yaml
+   ./run-simulations.sh visualise -c lrsim/config/ether_simple.yaml
 
    # Clean up all generated files and containers
    ./run-simulations.sh clean
@@ -144,10 +144,10 @@ The easiest way to run simulations is using the `run-simulations.sh` convenience
    docker-compose build
 
    # Run a simulation
-   docker compose run --rm leo-routing-simu src/config/ether_simple.yaml
+   docker compose run --rm leo-routing-simu lrsim/config/ether_simple.yaml
 
    # Generate visualization
-   docker compose run --rm --entrypoint "python -m src.satellite_visualisation.cesium_builder.main" leo-routing-viz src/config/ether_simple.yaml
+   docker compose run --rm --entrypoint "python -m lrsim.satellite_visualisation.cesium_builder.main" leo-routing-viz lrsim/config/ether_simple.yaml
 
    # Start web server to view results
    docker compose up -d viz-server
@@ -200,14 +200,14 @@ Get started with a simple simulation in minutes using the convenience script:
 
 ```bash
 # 1. Run a basic simulation with a simplified constellation (uses Docker)
-./run-simulations.sh run -c src/config/ether_simple.yaml
+./run-simulations.sh run -c lrsim/config/ether_simple.yaml
 
 # 2. Check the generated output
 ls -l output/logs/
 ls -l output/simulation/
 
 # 3. Generate and view visualization (starts HTTP server on port 8080)
-./run-simulations.sh visualise -c src/config/ether_simple.yaml
+./run-simulations.sh visualise -c lrsim/config/ether_simple.yaml
 
 # 4. Open your browser to http://localhost:8080
 # The visualization will be available at the web interface
@@ -220,15 +220,21 @@ ls -l output/simulation/
 
 ### Running Simulations
 
-The main simulation entry point accepts a configuration file that defines all simulation parameters:
+The main simulation entry point accepts a configuration file that defines all simulation parameters.
 
+**Using the installed package (Recommended):**
 ```bash
-python -m src.main --config <path-to-config.yaml>
+lrsim --config <path-to-config.yaml>
+```
+
+**Running as a module:**
+```bash
+python -m lrsim.main --config <path-to-config.yaml>
 ```
 
 **Available example configurations**:
-- `src/config/ether_simple.yaml` - Simplified constellation (18 orbits, 18 satellites per orbit) for quick testing
-- `src/config/starlink.yaml` - Full-scale Starlink-like constellation (22 orbits, 72 satellites per orbit)
+- `lrsim/config/ether_simple.yaml` - Simplified constellation (18 orbits, 18 satellites per orbit) for quick testing
+- `lrsim/config/starlink.yaml` - Full-scale Starlink-like constellation (22 orbits, 72 satellites per orbit)
 
 **Simulation outputs** are stored in timestamped directories:
 
@@ -245,7 +251,7 @@ output/
 
 The simulation is configured through YAML files that define constellation parameters, simulation settings, ground stations, and network characteristics.
 
-**Example configuration** (`src/config/ether_simple.yaml`):
+**Example configuration** (`lrsim/config/ether_simple.yaml`):
 
 ```yaml
 constellation:
@@ -309,17 +315,17 @@ After running a simulation, generate interactive 3D visualizations using Cesium.
 **Note**: To use the visualization, you need a Cesium Ion Access Token.
 1. Sign up for a free account at [Cesium Ion](https://ion.cesium.com/).
 2. Get your default access token.
-3. Open `src/satellite_visualisation/static_html/top.html` and replace `YOUR_CESIUM_ION_TOKEN` with your actual token.
+3. Open `lrsim/satellite_visualisation/static_html/top.html` and replace `YOUR_CESIUM_ION_TOKEN` with your actual token.
 
 ```bash
 # Generate visualization from simulation config
-python -m src.satellite_visualisation.cesium_builder.main src/config/ether_simple.yaml
+python -m lrsim.satellite_visualisation.cesium_builder.main lrsim/config/ether_simple.yaml
 
 # Start a local web server
 python -m http.server 8000
 
 # Open in browser
-# Navigate to: http://localhost:8000/src/satellite_visualisation/visualisation_output/
+# Navigate to: http://localhost:8000/lrsim/satellite_visualisation/visualisation_output/
 ```
 
 The visualization includes satellite orbits and positions over time
@@ -328,7 +334,7 @@ The visualization includes satellite orbits and positions over time
 
 ```
 leo-routing-simu/
-├── src/
+├── lrsim/
 │   ├── main.py                          # Main simulation entry point
 │   ├── logger.py                        # Logging configuration
 │   ├── config/                          # Configuration files
@@ -378,7 +384,7 @@ The framework supports multiple routing algorithms through a pluggable architect
 
 To implement a new routing algorithm:
 
-1. Create a new class inheriting from `RoutingAlgorithm` in `src/network_state/routing_algorithms/`
+1. Create a new class inheriting from `RoutingAlgorithm` in `lrsim/network_state/routing_algorithms/`
 2. Implement the required abstract methods:
    - `compute_next_hop()` - Calculate next hop for given source-destination pair
    - `update_topology()` - Update internal state based on topology changes
@@ -388,7 +394,7 @@ To implement a new routing algorithm:
 Example:
 
 ```python
-from src.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
+from lrsim.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
 
 class MyCustomRoutingAlgorithm(RoutingAlgorithm):
     def compute_next_hop(self, src, dst, topology):
@@ -478,8 +484,8 @@ pytest tests/topology/test_gsl_attachment_integration.py -v
 3. Make your changes with clear commit messages
 4. Add tests for new functionality
 5. Ensure all tests pass (`pytest tests/`)
-6. Format code with Black (`black src/ tests/`)
-7. Run linters (`flake8 src/ tests/`)
+6. Format code with Black (`black lrsim/ tests/`)
+7. Run linters (`flake8 lrsim/ tests/`)
 8. Submit a pull request
 
 **Note**: By contributing to this project, you agree that your contributions will be licensed under the AGPL-3.0 license.
@@ -495,14 +501,14 @@ pytest tests/topology/test_gsl_attachment_integration.py -v
 ### Adding New Features
 
 **New Routing Algorithms**:
-1. Create implementation in `src/network_state/routing_algorithms/`
+1. Create implementation in `lrsim/network_state/routing_algorithms/`
 2. Inherit from `RoutingAlgorithm` base class
 3. Register in `routing_algorithm_factory.py`
 4. Add tests in `tests/forwarding_state/`
 5. Update documentation
 
 **New GSL Attachment Strategies**:
-1. Implement strategy in `src/network_state/gsl_attachment/`
+1. Implement strategy in `lrsim/network_state/gsl_attachment/`
 2. Register with decorator pattern
 3. Add integration tests
 4. Document in configuration guide
@@ -552,7 +558,6 @@ Attributions of Third Party Components of this work:
 - **geopy** Version 2.4.1 -  <https://pypi.org/project/geopy/> - MIT license
 - **pandas** Version 2.2.3 -  <https://pandas.pydata.org/> - BSD 3-Clause License
 - **czml3** Version 2.3.4 -  <https://pypi.org/project/czml3/> - MIT license
-- **exputil** (from Hypatia) -  <https://github.com/snkas/exputilpy> - MIT license
 - **astropy** Version 7.0.1 -  <https://www.astropy.org/> - BSD 3-Clause License
 - **pytest** Version 8.3.5 -  <https://pytest.org/> - MIT license
 - **pydantic** Version 2.11.4 - <https://docs.pydantic.dev/> - MIT license

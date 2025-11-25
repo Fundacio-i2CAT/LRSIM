@@ -1,0 +1,4 @@
+include requirements.txt
+include README.md
+include LICENSE
+recursive-include lrsim *.yaml *.html *.js *.css *.png

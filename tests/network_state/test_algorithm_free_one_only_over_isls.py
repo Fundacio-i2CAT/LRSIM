@@ -6,12 +6,12 @@ from unittest.mock import MagicMock, patch
 import ephem
 from astropy.time import Time
 
-from src.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
-from src.network_state.routing_algorithms.shortest_path_link_state_routing import (
+from lrsim.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
+from lrsim.network_state.routing_algorithms.shortest_path_link_state_routing import (
     one_iface_free_bw_allocation_only_over_isls,
 )
-from src.topology.satellite.satellite import Satellite
-from src.topology.topology import (
+from lrsim.topology.satellite.satellite import Satellite
+from lrsim.topology.topology import (
     ConstellationData,
     GroundStation,
     LEOTopology,
@@ -150,7 +150,7 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
         # --- Patch the helper function ---
         # Patch where it's looked up: in the algorithm module itself
         patcher = patch(
-            "src.network_state.routing_algorithms.shortest_path_link_state_routing.one_iface_free_bw_allocation_only_over_isls.calculate_fstate_shortest_path_object_no_gs_relay"
+            "lrsim.network_state.routing_algorithms.shortest_path_link_state_routing.one_iface_free_bw_allocation_only_over_isls.calculate_fstate_shortest_path_object_no_gs_relay"
         )
         self.addCleanup(patcher.stop)
         self.mock_fstate_calculator = patcher.start()
@@ -161,7 +161,7 @@ class TestAlgorithmFreeOneOnlyOverIsls(unittest.TestCase):
 
         # Patch logger (optional, useful for checking log calls)
         patcher_log = patch(
-            "src.network_state.routing_algorithms.shortest_path_link_state_routing.one_iface_free_bw_allocation_only_over_isls.log",
+            "lrsim.network_state.routing_algorithms.shortest_path_link_state_routing.one_iface_free_bw_allocation_only_over_isls.log",
             MagicMock(),
         )
         self.addCleanup(patcher_log.stop)

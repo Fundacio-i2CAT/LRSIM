@@ -3,10 +3,10 @@ import unittest
 import ephem
 from astropy.time import Time
 
-from src.network_state.generate_network_state import (
+from lrsim.network_state.generate_network_state import (
     generate_dynamic_state,
 )
-from src.topology.topology import ConstellationData, GroundStation, Satellite
+from lrsim.topology.topology import ConstellationData, GroundStation, Satellite
 
 
 class TestDynamicStateIntegration(unittest.TestCase):

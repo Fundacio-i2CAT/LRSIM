@@ -11,7 +11,6 @@ coverage==7.8.0
 cycler==0.12.1
 czml3==2.3.4
 ephem==4.2
-exputil @ git+https://github.com/snkas/exputilpy.git@312749788b8d8d9d38cc4db9991193b84831d919
 flake8==7.2.0
 fonttools==4.57.0
 geographiclib==2.0

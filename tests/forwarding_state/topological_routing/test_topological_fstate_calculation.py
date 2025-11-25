@@ -11,13 +11,13 @@ from unittest.mock import MagicMock
 
 import ephem
 
-from src.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
-from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+from lrsim.network_state.gsl_attachment.gsl_attachment_interface import GSLAttachmentStrategy
+from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
     calculate_fstate_topological_routing_no_gs_relay,
 )
-from src.topology.satellite.satellite import Satellite
-from src.topology.satellite.topological_network_address import TopologicalNetworkAddress
-from src.topology.topology import (
+from lrsim.topology.satellite.satellite import Satellite
+from lrsim.topology.satellite.topological_network_address import TopologicalNetworkAddress
+from lrsim.topology.topology import (
     ConstellationData,
     GroundStation,
     LEOTopology,
@@ -580,7 +580,7 @@ class TestTopologicalRoutingFstateCalculation(unittest.TestCase):
                 sat.id
             )
 
-        from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+        from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
             _detect_gsl_changes,
             _perform_renumbering_for_gs,
         )
@@ -679,7 +679,7 @@ class TestTopologicalRoutingFstateCalculation(unittest.TestCase):
             ),
         ]
 
-        from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+        from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
             _detect_gsl_changes,
         )
 
@@ -760,7 +760,7 @@ class TestTopologicalRoutingFstateCalculation(unittest.TestCase):
             SAT_A
         )
 
-        from src.network_state.routing_algorithms.topological_routing.fstate_calculation import (
+        from lrsim.network_state.routing_algorithms.topological_routing.fstate_calculation import (
             _perform_renumbering_for_gs,
         )
 

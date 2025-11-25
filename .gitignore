@@ -23,3 +23,14 @@ ether_simple.txt
 visualisation_output
 *.tmp
 output/
+ether_simple_tles.txt
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
