@@ -110,6 +110,8 @@ The `run-simulations.sh` script handles all Docker operations automatically. You
 
 ## Installation
 
+The project can be installed directly using the pip package manager.
+
 ### From PyPI (Recommended for usage)
 
 You can install LEOPath directly from PyPI:
@@ -193,10 +195,11 @@ For development or customization, you can install the framework locally:
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-3. **Install dependencies**:
+3. **Install the project**:
    ```bash
-   pip install -r requirements.txt
+   pip install -e .
    ```
+   This installs the project in editable mode using pip, including all dependencies.
 
 4. **Verify installation**:
    ```bash
@@ -393,26 +396,65 @@ The framework supports multiple routing algorithms through a pluggable architect
 
 To implement a new routing algorithm:
 
-1. Create a new class inheriting from `RoutingAlgorithm` in `leopath/network_state/routing_algorithms/`
-2. Implement the required abstract methods:
-   - `compute_next_hop()` - Calculate next hop for given source-destination pair
-   - `update_topology()` - Update internal state based on topology changes
-3. Register the algorithm in `routing_algorithm_factory.py`
-4. Update configuration files to use your new algorithm
+1. Create a new class inheriting from `RoutingAlgorithm` in `leopath/network_state/routing_algorithms/`.
+2. Implement the required abstract method `compute_state`.
+3. Register the algorithm in `leopath/network_state/routing_algorithms/routing_algorithm_factory.py`.
+4. Update configuration files to use your new algorithm.
 
-Example:
+**Step 1: Create the Algorithm Class**
+
+Create a new file (e.g., `my_custom_routing.py`) in `leopath/network_state/routing_algorithms/` or a subdirectory.
 
 ```python
 from leopath.network_state.routing_algorithms.routing_algorithm import RoutingAlgorithm
+from leopath.topology.topology import ConstellationData, GroundStation, LEOTopology
 
 class MyCustomRoutingAlgorithm(RoutingAlgorithm):
-    def compute_next_hop(self, src, dst, topology):
-        # Your routing logic here
-        pass
-    
-    def update_topology(self, topology):
-        # Update internal state
-        pass
+    def compute_state(
+        self,
+        time_since_epoch_ns: int,
+        constellation_data: ConstellationData,
+        ground_stations: list[GroundStation],
+        topology_with_isls: LEOTopology,
+        ground_station_satellites_in_range: list,
+        list_gsl_interfaces_info: list,
+    ) -> dict:
+        """
+        Implement your routing logic here.
+        
+        :return: Dictionary containing 'fstate' and 'bandwidth' state objects.
+        """
+        # ... implementation ...
+        return {
+            "fstate": my_fstate,
+            "bandwidth": my_bandwidth
+        }
+```
+
+**Step 2: Register the Algorithm**
+
+Edit `leopath/network_state/routing_algorithms/routing_algorithm_factory.py`:
+
+```python
+from .my_custom_routing import MyCustomRoutingAlgorithm
+
+def get_routing_algorithm(name: str):
+    if name == "shortest_path_link_state":
+        return ShortestPathLinkStateRoutingAlgorithm()
+    elif name == "topological_routing":
+        return TopologicalRoutingAlgorithm()
+    elif name == "my_custom_algorithm":  # Add this
+        return MyCustomRoutingAlgorithm()
+    else:
+        raise ValueError(f"Unknown routing algorithm: {name}")
+```
+
+**Step 3: Update Configuration**
+
+In your configuration file (e.g., `config/ether_simple.yaml`), set:
+
+```yaml
+dynamic_state_algorithm: "my_custom_algorithm"
 ```
 
 
